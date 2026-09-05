@@ -1,0 +1,12 @@
+# Keep app source in the repo; ignore only build output.
+build/
+.build/
+dist/
+*.o
+*.d
+*.fap
+*.elf
+*.map
+__pycache__/
+*.pyc
+.DS_Store

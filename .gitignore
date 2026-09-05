@@ -1,0 +1,10 @@
+build/
+dist/
+toolchain/
+.build/
+*.o
+*.map
+*.elf
+__pycache__/
+*.pyc
+.DS_Store

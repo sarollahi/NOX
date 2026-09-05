@@ -1,0 +1,28 @@
+# Temporary files and backup copies created by text editors
+*~
+
+# Ignore all files in the .vscode directory by default
+/.vscode/*
+
+# But include specific configuration files
+!/.vscode/settings.json
+!/.vscode/tasks.json
+!/.vscode/launch.json
+!/.vscode/extensions.json
+
+# Ignore build output directories
+dist/
+
+.firmware
+.shared
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
