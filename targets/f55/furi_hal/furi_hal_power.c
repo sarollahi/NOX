@@ -254,7 +254,7 @@ void furi_hal_power_sleep(void) {
 #define NOX_BATT_DIVIDER 2.0f
 static const GpioPin gpio_nox_batt = {.port = GPIOA, .pin = LL_GPIO_PIN_2};
 
-static float nox_batt_voltage(void) {
+__attribute__((unused)) static float nox_batt_voltage(void) {
     furi_hal_gpio_init(&gpio_nox_batt, GpioModeAnalog, GpioPullNo, GpioSpeedLow);
     FuriHalAdcHandle* adc = furi_hal_adc_acquire();
     // Scale2500 (not the 2.048V default): a full cell reads 4.2/2 = 2.1V.
@@ -268,11 +268,17 @@ static float nox_batt_voltage(void) {
     uint16_t raw = furi_hal_adc_read(adc, FuriHalAdcChannel7);
     float v_adc = furi_hal_adc_convert_to_voltage(adc, raw) / 1000.0f; // mV -> V
     furi_hal_adc_release(adc);
-    return v_adc * NOX_BATT_DIVIDER;
+    float vbat = v_adc * NOX_BATT_DIVIDER;
+    // Missing-hardware safe: with no divider/cell on PA2 the pin floats and reads a bogus
+    // (usually low) voltage, which the power service treats as a critically empty battery and
+    // shuts down -> boot loop. A connected 18650 sits ~3.0-4.3V; anything outside that means
+    // "no battery sensor", so report a safe nominal instead of false-shutting-down.
+    if(vbat < 3.0f || vbat > 4.5f) return 3.9f;
+    return vbat;
 }
 
 // Li-ion open-circuit-voltage -> percent (light-load approximation).
-static uint8_t nox_batt_pct(float v) {
+__attribute__((unused)) static uint8_t nox_batt_pct(float v) {
     static const struct {
         float v;
         uint8_t pct;
@@ -292,7 +298,10 @@ static uint8_t nox_batt_pct(float v) {
 // ---------------------------------------------------------------------------
 
 uint8_t furi_hal_power_get_pct(void) {
-    if(!furi_hal_power.gauge_ok) return nox_batt_pct(nox_batt_voltage());
+    // NOX: battery sense via ADC is disabled - furi_hal_adc on this build faults on the periodic
+    // poll (boot loop). No BQ gauge + (currently) no divider wired, so report "full" (USB-powered).
+    // Re-enable nox_batt_pct(nox_batt_voltage()) once the ADC path is fixed + the divider is wired.
+    if(!furi_hal_power.gauge_ok) return 100;
     furi_hal_i2c_acquire(&furi_hal_i2c_handle_power);
     uint8_t ret = bq27220_get_state_of_charge(&furi_hal_i2c_handle_power);
     furi_hal_i2c_release(&furi_hal_i2c_handle_power);
@@ -461,7 +470,7 @@ float furi_hal_power_get_battery_voltage(FuriHalPowerIC ic) {
             ret = (float)bq27220_get_voltage(&furi_hal_i2c_handle_power) / 1000.0f;
         } else {
             furi_hal_i2c_release(&furi_hal_i2c_handle_power);
-            return nox_batt_voltage(); // ADC path, no i2c held
+            return 4.0f; // NOX: ADC battery sense disabled (see get_pct)
         }
     } else {
         furi_crash();
