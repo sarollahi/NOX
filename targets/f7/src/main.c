@@ -41,7 +41,14 @@ int main(void) {
     furi_delay_ms(100);
 
     FuriHalRtcBootMode boot_mode = furi_hal_rtc_get_boot_mode();
+#ifdef FURI_HAL_RESOURCES_INPUT_165
+    // NOX: buttons are on a SN74HC165, not direct GPIO. gpio_button_left (PA2) is repurposed as
+    // the battery-ADC pin and floats low on a bare board, which would false-trigger this
+    // hold-LEFT-for-DFU recovery on every boot. Enter DFU only via the reboot2dfu boot flag.
+    if(boot_mode == FuriHalRtcBootModeDfu) {
+#else
     if(boot_mode == FuriHalRtcBootModeDfu || !furi_hal_gpio_read(&gpio_button_left)) {
+#endif
         furi_hal_light_sequence("rgb WB");
         furi_hal_rtc_set_boot_mode(FuriHalRtcBootModeNormal);
         flipper_boot_dfu_exec();
