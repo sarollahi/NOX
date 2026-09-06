@@ -35,11 +35,11 @@ tree lives in this repo** and builds with a single command.
 | SubGHz | **CC1101** | shared SPI1, CS PA7, GDO0 PA1 |
 | Display | **ST7565 128×64** | shared SPI1, CS PB2 / RST PB0 / DC PB1 |
 | microSD | SPI SD module | shared SPI1, CS PA4, DET PA3 |
-| NFC | **ST25R3916** *(plug-in)* | shared SPI1, CS PA8, IRQ PA0 |
-| Buttons | **SN74HC165** shift register | PL PB8 / CP PB9 / Q7 PA15 |
-| Speaker · Vibro · iButton | passive + NPN | PA6 (TIM16) · PA5 · PA10 |
-| Battery | 18650 + 100k/100k divider | PA2 (ADC) |
-| Add-on bays | 5-pin serial + 9-pin SPI | [plug-in headers](docs/hardware/plug-in-headers.md) |
+| NFC | **ST25R3916** *(plug-in)* | shared SPI1, CS PA8, IRQ PA2 |
+| Buttons | **SN74HC165** shift register | PL PB8 / CP PA5 / Q7 PA15 |
+| Infrared *(plug-in)* | IR LED + 38 kHz receiver | TX PB9 · RX PA0 (stock-Flipper IR pins) |
+| Speaker (buzzer) · iButton | passive + NPN | PA6 (TIM16) · PA10 |
+| Add-on bays | 5-pin serial + 9-pin SPI + IR | [plug-in headers](docs/hardware/plug-in-headers.md) |
 
 Full pin map: **[docs/hardware/pinout.md](docs/hardware/pinout.md)**.
 
@@ -70,6 +70,7 @@ First-board bring-up (radio stack, OTP, the reliable `reboot2dfu` flashing metho
 | NFC 13.56 MHz | read/emulate, mfkey, Magic, PicoPass, Seader, Metroflip, ChaosID | [features.md](docs/features.md) |
 | WiFi / BLE | Marauder, Ghost ESP, Evil Portal, BLE Spam, deauth, FlipperHTTP suite | [features.md](docs/features.md) |
 | 2.4 GHz / UHF | nRF24 Mousejack/sniff, UHF-RFID (YRM100), Wiegand | [features.md](docs/features.md) |
+| Infrared | learn/replay remotes, universal TV/AC database (plug-in IR module) | [features.md](docs/features.md) |
 | USB / iButton | BadUSB, HID, U2F, iButton read/emulate/fuzz | [features.md](docs/features.md) |
 
 Full catalogue (147 apps + 86 plugins): **[docs/app-catalog.md](docs/app-catalog.md)**.
@@ -78,12 +79,14 @@ Full catalogue (147 apps + 86 plugins): **[docs/app-catalog.md](docs/app-catalog
 
 - **Bay 1 — Serial (5-pin):** ESP32 **or** UHF-RFID **or** Wiegand (all share the UART).
 - **Bay 2 — SPI (9-pin):** NFC **and/or** nRF24 (nRF24 not while transmitting SubGHz).
+- **Bay 3 — IR (2-wire):** IR LED (PB9) + 38 kHz receiver (PA0), always available.
 
 Wiring per module: **[docs/hardware/plug-in-headers.md](docs/hardware/plug-in-headers.md)**.
 
 ## Limitations
 
-- **No 125/134 kHz LF-RFID** and **no Infrared** — no analog LF front-end / IR LED, and those pins aren't bonded on the package. Excluded, not broken.
+- **No 125/134 kHz LF-RFID** — no analog LF front-end, and those pins aren't bonded on the package. Excluded, not broken. (Infrared *is* supported — plug-in IR module on the stock-Flipper IR pins.)
+- **No vibro / battery-% ADC** — those two pins were reassigned to free IR (buzzer stays).
 - **One shared SPI bus** — some peripheral combinations are mutually exclusive.
 - **Pin-starved** — the add-on bays reuse pins; run one serial device at a time.
 

@@ -9,9 +9,14 @@ These are the honest trade-offs.
 | Missing | Why | Affected apps |
 |---|---|---|
 | **125/134 kHz LF-RFID** | No LF analog front-end (carrier driver + LC coil + envelope demod); `RFID_*` pins aren't bonded on UFQFPN48. No external module can substitute — the Flipper LF app drives on-die analog, not a plug-in. | lfrfid, T5577 writers, EM4100, FDX-B, RFID metal detector |
-| **Infrared** | No IR LED / receiver, no free timer pin left after dropping IR. | infrared, all AC-remote apps |
 
-These apps are removed from the build. Don't buy hardware to "add" them — it won't integrate.
+LF-RFID is removed from the build. Don't buy hardware to "add" it — it won't integrate.
+
+**Infrared is supported** (it was previously excluded). IR TX (PB9) and IR RX (PA0) are the same
+pins/timers the real Flipper uses, so the stock IR HAL runs unmodified. It's a plug-in module (IR
+LED + 38 kHz demodulator — see [pinout.md](hardware/pinout.md)). Freeing those two pins cost the
+**vibro** motor (PA5 is now the '165 CLK) and the **battery-% ADC** (PA2 is now the NFC IRQ); the
+buzzer stays. Battery % currently reports full on USB regardless (ADC sense disabled).
 
 ## Shared single SPI bus
 
@@ -47,6 +52,7 @@ Current build ≈ 866 KB, ~14 KB headroom. Compiled-in apps eat this budget; SD 
 
 - **SWD** over dupont jumpers is unreliable on this board; use the `reboot2dfu` race method
   ([setup.md](setup.md)) for app flashing. Radio-stack swaps need a soldered SWD header.
-- The following are **built and size-safe but unverified on hardware** by the author of a given
-  build: the SN74HC165 button scan timing, battery-% ADC calibration, speaker/vibro, nRF24 timing.
-  Treat first power-on as bring-up; the divider ratio and '165 bit-delay are tunable knobs.
+- **Verified on hardware:** SubGHz (CC1101), display, SN74HC165 buttons, NFC, IR TX/RX, buzzer.
+- **Not on this board:** battery-% ADC and vibro were removed to free pins for IR (battery reports
+  full on USB; no vibro). nRF24 timing is built but unverified — treat first use as bring-up. The
+  '165 bit-delay is a tunable knob if long wires glitch the read.

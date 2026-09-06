@@ -38,6 +38,19 @@ hardware notes in [app-catalog.md](app-catalog.md); wire swappable modules per
 - **TPMS Bridge** (`tpms_bridge`) — Reads car tyre pressure sensors: 39 protocols, pressure, temperature, signal
 - **Weather Station** (`weather_station`) — Receive weather data from a wide range of supported Sub-1GHz remote sensor
 
+## Infrared
+
+38 kHz IR via a plug-in module (IR LED + NPN on PB9 for TX, TSOP38238/KY-022 demodulator on PA0
+for RX). These are the stock-Flipper IR pins (TIM1/TIM2), so the full IR app runs unmodified:
+
+- **Infrared** (`infrared`) — learn, save, and replay remotes; universal remote database (TV / AC /
+  audio / projector) from the SD card; per-button capture and send.
+- **cli_ir** (`cli_ir`) — infrared CLI plugin (`ir rx` / `ir tx`).
+
+Point a TV/AC remote at the receiver to learn it; save and blast back with the transmitter. Range
+depends on the IR LED drive (KY-005-style modules reach ~1–2 m; add a driver transistor + brighter
+LED for more).
+
 ## NFC
 
 13.56 MHz via the ST25R3916 (plug-in). Core read/emulate plus:

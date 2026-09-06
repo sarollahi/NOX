@@ -3,7 +3,7 @@ App(
     name="Infrared",
     apptype=FlipperAppType.MENUEXTERNAL,
     entry_point="infrared_app",
-    targets=["f7"],
+    targets=["f7", "f55"],
     icon="A_Infrared_14",
     stack_size=3 * 1024,
     order=40,
@@ -16,7 +16,7 @@ App(
 
 App(
     appid="cli_ir",
-    targets=["f7"],
+    targets=["f7", "f55"],
     apptype=FlipperAppType.PLUGIN,
     entry_point="cli_ir_ep",
     requires=["cli"],

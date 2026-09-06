@@ -146,10 +146,11 @@ extern const GpioPin gpio_usb_dp;
 #define DISPLAY_RST_GPIO_Port GPIOB
 #define DISPLAY_RST_Pin LL_GPIO_PIN_0
 
-#define IR_RX_GPIO_Port GPIOE
-#define IR_RX_Pin LL_GPIO_PIN_4
-#define IR_TX_GPIO_Port GPIOE
-#define IR_TX_Pin LL_GPIO_PIN_4
+// NOX-IR: IR RX on PA0 (TIM2_CH1, freed from NFC IRQ), IR TX on PB9 (TIM1_CH3N, freed from '165 CLK).
+#define IR_RX_GPIO_Port GPIOA
+#define IR_RX_Pin LL_GPIO_PIN_0
+#define IR_TX_GPIO_Port GPIOB
+#define IR_TX_Pin LL_GPIO_PIN_9
 
 #define NFC_CS_GPIO_Port GPIOA
 #define NFC_CS_Pin LL_GPIO_PIN_8
@@ -178,8 +179,9 @@ extern const GpioPin gpio_usb_dp;
 
 #define RFID_OUT_GPIO_Port GPIOE
 #define RFID_OUT_Pin LL_GPIO_PIN_4
+// NOX-IR: NFC IRQ moved PA0 -> PA2 (PA0 reused for IR RX). PA2 was the disabled battery-ADC pin.
 #define RFID_PULL_GPIO_Port GPIOA
-#define RFID_PULL_Pin LL_GPIO_PIN_0
+#define RFID_PULL_Pin LL_GPIO_PIN_2
 #define RFID_RF_IN_GPIO_Port GPIOE
 #define RFID_RF_IN_Pin LL_GPIO_PIN_4
 #define RFID_CARRIER_GPIO_Port GPIOE
@@ -196,8 +198,9 @@ extern const GpioPin gpio_usb_dp;
 #define SPEAKER_GPIO_Port GPIOA
 #define SPEAKER_Pin LL_GPIO_PIN_6
 
-#define VIBRO_GPIO_Port GPIOA
-#define VIBRO_Pin LL_GPIO_PIN_5
+// NOX-IR: vibro dropped. PA5 reused as '165 CLK. Park vibro on non-bonded PC1 (writes are no-ops).
+#define VIBRO_GPIO_Port GPIOC
+#define VIBRO_Pin LL_GPIO_PIN_1
 
 #define iBTN_GPIO_Port GPIOA
 #define iBTN_Pin LL_GPIO_PIN_10 // PA10: freed power-I2C SDA (no gauge/charger on board). NOT PH3 (BOOT0 strap).

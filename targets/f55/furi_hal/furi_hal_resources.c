@@ -43,7 +43,7 @@ const GpioPin gpio_button_back = {.port = GPIOB, .pin = LL_GPIO_PIN_9};
 //   D0=Up D1=Down D2=Right D3=Left D4=Ok D5=Back   (D6/D7 -> 3V3, unused)
 // Read order: QH (=D7) first, so first-read lands in bit7, last (D0) in bit0.
 const GpioPin gpio_165_pl = {.port = GPIOB, .pin = LL_GPIO_PIN_8}; // SH/LD pin1
-const GpioPin gpio_165_cp = {.port = GPIOB, .pin = LL_GPIO_PIN_9}; // CLK   pin2
+const GpioPin gpio_165_cp = {.port = GPIOA, .pin = LL_GPIO_PIN_5}; // CLK pin2 (moved PB9->PA5, frees PB9 for IR TX)
 const GpioPin gpio_165_q7 = {.port = GPIOA, .pin = LL_GPIO_PIN_15}; // QH    pin9
 
 // 0xFF = all released. A missing/unwired '165 leaves Q7 pulled high -> reads

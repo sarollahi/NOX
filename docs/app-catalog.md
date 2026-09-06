@@ -1,7 +1,7 @@
 # NOX App Library — 245 apps built for f55
 
 `★` = on the current SD build (146). Others archived — copy any `.fap` into the SD `apps/<Category>/` to use it.
-`(ported)` = rewrote for the f55/current API. Infrared + LF-RFID excluded (can't run on this board).
+`(ported)` = rewrote for the f55/current API. Infrared is supported (plug-in IR module); only LF-RFID (125/134 kHz) is excluded — no analog front-end on this board.
 
 
 ## Bluetooth (9)

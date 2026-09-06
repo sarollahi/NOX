@@ -31,7 +31,7 @@ Wire two female headers on the board and make matching module pigtails.
 | 2 | PB5 | MOSI | MOSI |
 | 3 | PB4 | MISO | MISO |
 | 4 | PA8 | NFC **CS** | — |
-| 5 | PA0 | NFC **IRQ** | — |
+| 5 | PA2 | NFC **IRQ** | — |
 | 6 | PA9 | — | **CSN** |
 | 7 | PE4 | — | **CE** |
 | 8 | 3V3 | VCC | VCC (use the 3V3 breakout adapter) |
@@ -42,8 +42,21 @@ Wire two female headers on the board and make matching module pigtails.
   transmitting/receiving SubGHz. NFC + SubGHz is fine.
 - Unplugged bay = apps still open, just sense nothing (Q7/CS pulled safe).
 
+## Bay 3 — IR (2-wire + power)
+Small header, not shared with the SPI/serial bays. Uses the stock-Flipper IR pins.
+
+| Header pin | MCU | IR module |
+|---|---|---|
+| 1 | PB9 | IR **transmitter** DAT (KY-005: IR LED + NPN) |
+| 2 | PA0 | IR **receiver** DAT (TSOP38238 / KY-022, 38 kHz demodulated) |
+| 3 | 3V3 | VCC — **receiver must be 3V3** (its output feeds PA0; 5V would over-volt it). TX may take 5V for range. |
+| 4 | GND | GND |
+
+- IR is always available (no bus sharing); TX and RX are independent.
+- Nothing plugged = the IR app opens and simply transmits/receives nothing.
+
 ## Quick "what can run together"
-- Always live: SubGHz (CC1101), LCD, microSD, buttons (’165), speaker, vibro, iButton, battery.
+- Always live: SubGHz (CC1101), LCD, microSD, buttons (’165), buzzer, iButton, IR.
 - Bay 1: ESP32 **or** UHF **or** Wiegand.
 - Bay 2: NFC **and/or** nRF24 (nRF24 not with SubGHz).
 - Example combos: SubGHz + NFC ✓ · ESP32-WiFi + NFC ✓ · nRF24 Mousejack (alone-ish) ✓ ·
@@ -53,5 +66,6 @@ Wire two female headers on the board and make matching module pigtails.
 - Wiegand app D0=PB6, D1=PB7, emulate-mosfets PA9/PE4 (repointed off SD-CS/CC1101-CS).
 - nRF24 CSN=PA9 (external-SPI handle CS), CE=PE4 (repointed off the LCD-CS default).
 - UHF/ESP32 use USART1 PB6/PB7 as-is.
-- NFC CS=PA8, IRQ=PA0 as-is.
-Dropped for good (no hardware): all LF-RFID (125/134 kHz) and Infrared apps.
+- NFC CS=PA8, IRQ=PA2 (moved off PA0, which is now IR RX).
+- IR TX=PB9, IR RX=PA0 (stock-Flipper IR pins; '165 CLK moved to PA5, vibro dropped, to free them).
+Dropped for good (no hardware): all LF-RFID (125/134 kHz). Infrared is now supported (plug-in).
