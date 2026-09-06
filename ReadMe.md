@@ -78,7 +78,7 @@ Full catalogue (147 apps + 86 plugins): **[docs/app-catalog.md](docs/app-catalog
 ## Plug-in add-on bays
 
 - **Bay 1 — Serial (5-pin):** ESP32 **or** UHF-RFID **or** Wiegand (all share the UART).
-- **Bay 2 — SPI (9-pin):** NFC **and/or** nRF24 (nRF24 not while transmitting SubGHz).
+- **Bay 2 — SPI (9-pin):** NFC **and/or** nRF24 — both coexist with SubGHz (shared SPI is time-sliced; RF-switch GPIO parked off PE4).
 - **Bay 3 — IR (2-wire):** IR LED (PB9) + 38 kHz receiver (PA0), always available.
 
 Wiring per module: **[docs/hardware/plug-in-headers.md](docs/hardware/plug-in-headers.md)**.

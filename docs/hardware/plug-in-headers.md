@@ -37,9 +37,10 @@ Wire two female headers on the board and make matching module pigtails.
 | 8 | 3V3 | VCC | VCC (use the 3V3 breakout adapter) |
 | 9 | GND | GND | GND |
 
-- NFC and nRF24 use **different CS pins**, so both can be plugged at once —
-  **except** nRF24 **CE=PE4 also drives the SubGHz antenna switch** → don't run nRF24 while
-  transmitting/receiving SubGHz. NFC + SubGHz is fine.
+- NFC and nRF24 use **different CS pins**, so both can be plugged at once. **nRF24 CE = PE4** no
+  longer clashes with SubGHz: the RF-switch GPIO is parked on non-bonded PC3 (no switch on this
+  board), so **nRF24 + SubGHz coexist**. Only limit: the shared SPI1 bus is time-sliced (interleave,
+  don't clock both at the same instant; no simultaneous TX on both radios).
 - Unplugged bay = apps still open, just sense nothing (Q7/CS pulled safe).
 
 ## Bay 3 — IR (2-wire + power)
@@ -58,13 +59,14 @@ Small header, not shared with the SPI/serial bays. Uses the stock-Flipper IR pin
 ## Quick "what can run together"
 - Always live: SubGHz (CC1101), LCD, microSD, buttons (’165), buzzer, iButton, IR.
 - Bay 1: ESP32 **or** UHF **or** Wiegand.
-- Bay 2: NFC **and/or** nRF24 (nRF24 not with SubGHz).
-- Example combos: SubGHz + NFC ✓ · ESP32-WiFi + NFC ✓ · nRF24 Mousejack (alone-ish) ✓ ·
+- Bay 2: NFC **and/or** nRF24 — **both coexist with SubGHz** (SPI time-sliced).
+- Example combos: SubGHz + NFC ✓ · SubGHz + nRF24 ✓ · ESP32-WiFi + NFC ✓ ·
   UHF-RFID + NFC ✓ · Wiegand capture (alone on UART) ✓.
 
 ## Firmware pin facts (already set)
 - Wiegand app D0=PB6, D1=PB7, emulate-mosfets PA9/PE4 (repointed off SD-CS/CC1101-CS).
-- nRF24 CSN=PA9 (external-SPI handle CS), CE=PE4 (repointed off the LCD-CS default).
+- nRF24 CSN=PA9 (external-SPI handle CS), CE=PE4. SubGHz RF-switch GPIO parked on non-bonded PC3
+  (no switch on this board), so PE4 is nRF24 CE alone → nRF24 + SubGHz coexist.
 - UHF/ESP32 use USART1 PB6/PB7 as-is.
 - NFC CS=PA8, IRQ=PA2 (moved off PA0, which is now IR RX).
 - IR TX=PB9, IR RX=PA0 (stock-Flipper IR pins; '165 CLK moved to PA5, vibro dropped, to free them).

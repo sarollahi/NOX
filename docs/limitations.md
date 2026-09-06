@@ -33,8 +33,11 @@ Every GPIO on the package is allocated. The two [plug-in bays](hardware/plug-in-
 pins, so some things are mutually exclusive:
 
 - **Serial bay:** ESP32 **or** UHF-RFID **or** Wiegand — one at a time (all own USART1).
-- **SPI bay:** NFC and nRF24 can coexist (different CS), but **nRF24 CE = PE4 also drives the
-  SubGHz antenna switch** → don't run nRF24 while transmitting/receiving SubGHz.
+- **SPI bay:** NFC and nRF24 coexist (different CS), and both now coexist with **SubGHz** too —
+  the RF-switch GPIO was parked on non-bonded PC3 (no switch chip exists on this board), so PE4 is
+  the nRF24 CE alone. The one true limit is the shared SPI1 bus: it's **time-sliced**, so you
+  interleave (poll CC1101, then nRF24) rather than clock both in the same instant. No simultaneous
+  transmit on both radios at once.
 - **CAN (MCP2515) / W5500 Ethernet** add-ons fit the SPI bay but borrow its CS/INT lines, so they
   compete with NFC/nRF24 — plug one SPI add-on at a time.
 - **Wiegand emulate** (not just read) needs the drive pins PA9/PE4 from the SPI bay in addition to

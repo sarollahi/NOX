@@ -63,5 +63,5 @@ per module in **[plug-in-headers.md](plug-in-headers.md)**. Summary:
 ## Do not use
 
 - **PH3** — BOOT0 strap; anything idle-high here forces a DFU boot. Leave unconnected.
-- **PC0/PC1/PC3** — not bonded on UFQFPN48 (vibro is parked on PC1 as a no-op sink).
+- **PC0/PC1/PC3** — not bonded on UFQFPN48; used as no-op sinks (vibro → PC1, SubGHz RF-switch → PC3, so PE4 is free for nRF24 CE).
 - LF-RFID pins — not present; 125/134 kHz is excluded (see [limitations.md](../limitations.md)).

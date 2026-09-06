@@ -187,8 +187,11 @@ extern const GpioPin gpio_usb_dp;
 #define RFID_CARRIER_GPIO_Port GPIOE
 #define RFID_CARRIER_Pin LL_GPIO_PIN_4
 
-#define RF_SW_0_GPIO_Port GPIOE
-#define RF_SW_0_Pin LL_GPIO_PIN_4
+// NOX: no external RF switch on this board (bare CC1101 module). The SubGHz RF-switch
+// GPIO is parked on non-bonded PC3 so it never drives PE4 — that frees PE4 as the nRF24 CE
+// (gpio_periph_power), letting nRF24 + SubGHz coexist (both plugged, SPI time-sliced).
+#define RF_SW_0_GPIO_Port GPIOC
+#define RF_SW_0_Pin LL_GPIO_PIN_3
 
 #define SD_CD_GPIO_Port GPIOA
 #define SD_CD_Pin LL_GPIO_PIN_3
