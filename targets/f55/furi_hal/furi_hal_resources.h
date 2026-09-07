@@ -121,39 +121,39 @@ extern const GpioPin gpio_periph_power;
 extern const GpioPin gpio_usb_dm;
 extern const GpioPin gpio_usb_dp;
 
-#define BUTTON_BACK_GPIO_Port GPIOB
-#define BUTTON_BACK_Pin LL_GPIO_PIN_9
-#define BUTTON_DOWN_GPIO_Port GPIOA
-#define BUTTON_DOWN_Pin LL_GPIO_PIN_5
-#define BUTTON_LEFT_GPIO_Port GPIOA
-#define BUTTON_LEFT_Pin LL_GPIO_PIN_2
-#define BUTTON_OK_GPIO_Port GPIOA
-#define BUTTON_OK_Pin LL_GPIO_PIN_15
+#define BUTTON_BACK_GPIO_Port  GPIOB
+#define BUTTON_BACK_Pin        LL_GPIO_PIN_9
+#define BUTTON_DOWN_GPIO_Port  GPIOA
+#define BUTTON_DOWN_Pin        LL_GPIO_PIN_5
+#define BUTTON_LEFT_GPIO_Port  GPIOA
+#define BUTTON_LEFT_Pin        LL_GPIO_PIN_2
+#define BUTTON_OK_GPIO_Port    GPIOA
+#define BUTTON_OK_Pin          LL_GPIO_PIN_15
 #define BUTTON_RIGHT_GPIO_Port GPIOA
-#define BUTTON_RIGHT_Pin LL_GPIO_PIN_6
-#define BUTTON_UP_GPIO_Port GPIOB
-#define BUTTON_UP_Pin LL_GPIO_PIN_8
+#define BUTTON_RIGHT_Pin       LL_GPIO_PIN_6
+#define BUTTON_UP_GPIO_Port    GPIOB
+#define BUTTON_UP_Pin          LL_GPIO_PIN_8
 
 #define CC1101_CS_GPIO_Port GPIOA
-#define CC1101_CS_Pin LL_GPIO_PIN_7
+#define CC1101_CS_Pin       LL_GPIO_PIN_7
 #define CC1101_G0_GPIO_Port GPIOA
-#define CC1101_G0_Pin LL_GPIO_PIN_1
+#define CC1101_G0_Pin       LL_GPIO_PIN_1
 
-#define DISPLAY_CS_GPIO_Port GPIOB
-#define DISPLAY_CS_Pin LL_GPIO_PIN_2
-#define DISPLAY_DI_GPIO_Port GPIOB
-#define DISPLAY_DI_Pin LL_GPIO_PIN_1
+#define DISPLAY_CS_GPIO_Port  GPIOB
+#define DISPLAY_CS_Pin        LL_GPIO_PIN_2
+#define DISPLAY_DI_GPIO_Port  GPIOB
+#define DISPLAY_DI_Pin        LL_GPIO_PIN_1
 #define DISPLAY_RST_GPIO_Port GPIOB
-#define DISPLAY_RST_Pin LL_GPIO_PIN_0
+#define DISPLAY_RST_Pin       LL_GPIO_PIN_0
 
 // NOX-IR: IR RX on PA0 (TIM2_CH1, freed from NFC IRQ), IR TX on PB9 (TIM1_CH3N, freed from '165 CLK).
 #define IR_RX_GPIO_Port GPIOA
-#define IR_RX_Pin LL_GPIO_PIN_0
+#define IR_RX_Pin       LL_GPIO_PIN_0
 #define IR_TX_GPIO_Port GPIOB
-#define IR_TX_Pin LL_GPIO_PIN_9
+#define IR_TX_Pin       LL_GPIO_PIN_9
 
 #define NFC_CS_GPIO_Port GPIOA
-#define NFC_CS_Pin LL_GPIO_PIN_8
+#define NFC_CS_Pin       LL_GPIO_PIN_8
 
 #define PA4_GPIO_Port GPIOA
 #define PA4_Pin       LL_GPIO_PIN_4
@@ -177,36 +177,37 @@ extern const GpioPin gpio_usb_dp;
 #define QUARTZ_32MHZ_OUT_GPIO_Port GPIOC
 #define QUARTZ_32MHZ_OUT_Pin       LL_GPIO_PIN_15
 
-#define RFID_OUT_GPIO_Port GPIOE
-#define RFID_OUT_Pin LL_GPIO_PIN_4
+#define RFID_OUT_GPIO_Port     GPIOE
+#define RFID_OUT_Pin           LL_GPIO_PIN_4
 // NOX-IR: NFC IRQ moved PA0 -> PA2 (PA0 reused for IR RX). PA2 was the disabled battery-ADC pin.
-#define RFID_PULL_GPIO_Port GPIOA
-#define RFID_PULL_Pin LL_GPIO_PIN_2
-#define RFID_RF_IN_GPIO_Port GPIOE
-#define RFID_RF_IN_Pin LL_GPIO_PIN_4
+#define RFID_PULL_GPIO_Port    GPIOA
+#define RFID_PULL_Pin          LL_GPIO_PIN_2
+#define RFID_RF_IN_GPIO_Port   GPIOE
+#define RFID_RF_IN_Pin         LL_GPIO_PIN_4
 #define RFID_CARRIER_GPIO_Port GPIOE
-#define RFID_CARRIER_Pin LL_GPIO_PIN_4
+#define RFID_CARRIER_Pin       LL_GPIO_PIN_4
 
 // NOX: no external RF switch on this board (bare CC1101 module). The SubGHz RF-switch
 // GPIO is parked on non-bonded PC3 so it never drives PE4 — that frees PE4 as the nRF24 CE
 // (gpio_periph_power), letting nRF24 + SubGHz coexist (both plugged, SPI time-sliced).
 #define RF_SW_0_GPIO_Port GPIOC
-#define RF_SW_0_Pin LL_GPIO_PIN_3
+#define RF_SW_0_Pin       LL_GPIO_PIN_3
 
 #define SD_CD_GPIO_Port GPIOA
-#define SD_CD_Pin LL_GPIO_PIN_3
+#define SD_CD_Pin       LL_GPIO_PIN_3
 #define SD_CS_GPIO_Port GPIOA
-#define SD_CS_Pin LL_GPIO_PIN_4
+#define SD_CS_Pin       LL_GPIO_PIN_4
 
 #define SPEAKER_GPIO_Port GPIOA
-#define SPEAKER_Pin LL_GPIO_PIN_6
+#define SPEAKER_Pin       LL_GPIO_PIN_6
 
 // NOX-IR: vibro dropped. PA5 reused as '165 CLK. Park vibro on non-bonded PC1 (writes are no-ops).
 #define VIBRO_GPIO_Port GPIOC
-#define VIBRO_Pin LL_GPIO_PIN_1
+#define VIBRO_Pin       LL_GPIO_PIN_1
 
 #define iBTN_GPIO_Port GPIOA
-#define iBTN_Pin LL_GPIO_PIN_10 // PA10: freed power-I2C SDA (no gauge/charger on board). NOT PH3 (BOOT0 strap).
+#define iBTN_Pin \
+    LL_GPIO_PIN_10 // PA10: freed power-I2C SDA (no gauge/charger on board). NOT PH3 (BOOT0 strap).
 
 #define USART1_TX_Pin  LL_GPIO_PIN_6
 #define USART1_TX_Port GPIOB
@@ -214,18 +215,18 @@ extern const GpioPin gpio_usb_dp;
 #define USART1_RX_Port GPIOB
 
 #define SPI_D_MISO_GPIO_Port GPIOB
-#define SPI_D_MISO_Pin LL_GPIO_PIN_4
+#define SPI_D_MISO_Pin       LL_GPIO_PIN_4
 #define SPI_D_MOSI_GPIO_Port GPIOB
-#define SPI_D_MOSI_Pin LL_GPIO_PIN_5
-#define SPI_D_SCK_GPIO_Port GPIOB
-#define SPI_D_SCK_Pin LL_GPIO_PIN_3
+#define SPI_D_MOSI_Pin       LL_GPIO_PIN_5
+#define SPI_D_SCK_GPIO_Port  GPIOB
+#define SPI_D_SCK_Pin        LL_GPIO_PIN_3
 
 #define SPI_R_MISO_GPIO_Port GPIOB
-#define SPI_R_MISO_Pin LL_GPIO_PIN_4
+#define SPI_R_MISO_Pin       LL_GPIO_PIN_4
 #define SPI_R_MOSI_GPIO_Port GPIOB
-#define SPI_R_MOSI_Pin LL_GPIO_PIN_5
-#define SPI_R_SCK_GPIO_Port GPIOB
-#define SPI_R_SCK_Pin LL_GPIO_PIN_3
+#define SPI_R_MOSI_Pin       LL_GPIO_PIN_5
+#define SPI_R_SCK_GPIO_Port  GPIOB
+#define SPI_R_SCK_Pin        LL_GPIO_PIN_3
 
 #define NFC_IRQ_Pin       RFID_PULL_Pin
 #define NFC_IRQ_GPIO_Port RFID_PULL_GPIO_Port

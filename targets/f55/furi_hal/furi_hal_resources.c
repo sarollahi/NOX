@@ -38,12 +38,14 @@ const GpioPin gpio_button_back = {.port = GPIOB, .pin = LL_GPIO_PIN_9};
 
 // ---- NOX SN74HC165 button input -------------------------------------------
 // One PISO shift register reads all 6 buttons. Interface reuses the old button
-// GPIOs (PL=PB8, CP=PB9, Q7=PA15); the buttons themselves hang off the '165
+// GPIOs (PL=PB8, CP=PA5, Q7=PA15); the buttons themselves hang off the '165
 // parallel inputs D0..D5 (10k pull-up each, switch to GND, active-low):
 //   D0=Up D1=Down D2=Right D3=Left D4=Ok D5=Back   (D6/D7 -> 3V3, unused)
 // Read order: QH (=D7) first, so first-read lands in bit7, last (D0) in bit0.
 const GpioPin gpio_165_pl = {.port = GPIOB, .pin = LL_GPIO_PIN_8}; // SH/LD pin1
-const GpioPin gpio_165_cp = {.port = GPIOA, .pin = LL_GPIO_PIN_5}; // CLK pin2 (moved PB9->PA5, frees PB9 for IR TX)
+const GpioPin gpio_165_cp = {
+    .port = GPIOA,
+    .pin = LL_GPIO_PIN_5}; // CLK pin2 (moved PB9->PA5, frees PB9 for IR TX)
 const GpioPin gpio_165_q7 = {.port = GPIOA, .pin = LL_GPIO_PIN_15}; // QH    pin9
 
 // 0xFF = all released. A missing/unwired '165 leaves Q7 pulled high -> reads
@@ -201,7 +203,10 @@ void furi_hal_resources_init_early(void) {
     // NOX: PA8=NFC_CS, PB8=UP button, PB9=BACK button - drop stock speaker/vibro/IR
     // survive-reset pulldowns that would fight those functions on this board.
 
-    // SD Card stepdown control
+    // NOX: not a stepdown control here - PE4 (on-board blue LED / park pin / nRF24 CE).
+    // Open-drain + high leaves it high-Z, so a driver that claims it (nRF24 re-inits it as
+    // push-pull) starts from a clean, undriven pin. furi_hal_power_*_external_3_3v() are
+    // no-ops on this target so nothing fights that owner later.
     furi_hal_gpio_write(&gpio_periph_power, 1);
     furi_hal_gpio_init(&gpio_periph_power, GpioModeOutputOpenDrain, GpioPullNo, GpioSpeedLow);
 

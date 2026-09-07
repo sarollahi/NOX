@@ -66,7 +66,7 @@
 #define MAX_ARC_SIZE     15 //Auto Retransmit Count
 
 #define nrf24_TIMEOUT 500
-#define nrf24_CE_PIN  &gpio_ext_pb2
+#define nrf24_CE_PIN  &gpio_periph_power // NOX: PE4 (PB2 is LCD CS)
 #define nrf24_HANDLE  furi_hal_spi_bus_handle_external
 
 // Data rate options

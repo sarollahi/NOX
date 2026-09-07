@@ -911,7 +911,7 @@ bool furi_hal_sd_is_present(void) {
 
 uint8_t furi_hal_sd_max_mount_retry_count(void) {
     return 3; // NOX: detection now gates mounting, so retries only run with a card
-              // actually inserted. Kept low so a faulty card still fails fast.
+        // actually inserted. Kept low so a faulty card still fails fast.
 }
 
 FuriStatus furi_hal_sd_init(bool power_reset) {

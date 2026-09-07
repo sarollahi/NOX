@@ -283,8 +283,17 @@ __attribute__((unused)) static uint8_t nox_batt_pct(float v) {
         float v;
         uint8_t pct;
     } lut[] = {
-        {4.20f, 100}, {4.10f, 90}, {4.00f, 80}, {3.90f, 70}, {3.80f, 60}, {3.70f, 45},
-        {3.60f, 30},  {3.50f, 18}, {3.40f, 10}, {3.30f, 5},  {3.00f, 0},
+        {4.20f, 100},
+        {4.10f, 90},
+        {4.00f, 80},
+        {3.90f, 70},
+        {3.80f, 60},
+        {3.70f, 45},
+        {3.60f, 30},
+        {3.50f, 18},
+        {3.40f, 10},
+        {3.30f, 5},
+        {3.00f, 0},
     };
     if(v >= lut[0].v) return 100;
     for(size_t i = 1; i < COUNT_OF(lut); i++) {
@@ -364,6 +373,19 @@ void furi_hal_power_shutdown(void) {
 }
 
 void furi_hal_power_off(void) {
+    // NOX: on a real Flipper the BQ25896 charger performs the actual power cut. This board has
+    // no charger IC, so nothing here can cut the rail - and the I2C write would go out on
+    // PA9/PA10, which on this target are the nRF24 chip select and the iButton line.
+    //
+    // Return instead and let the caller finish the job: power_handle_shutdown() in
+    // applications/services/power/power_service/power.c calls furi_hal_power_off() and then
+    // falls through to furi_halt("Disconnect USB for safe shutdown"), which stops the CPU. A
+    // halted MCU is the closest thing to "off" this hardware has.
+    //
+    // Do NOT reset here. The same path serves the low-battery auto-shutdown, so rebooting
+    // would spin a dying cell in a reset loop instead of halting.
+    if(!furi_hal_power.charger_ok) return;
+
     // Crutch: shutting down with ext 3V3 off is causing LSE to stop
     furi_hal_rtc_prepare_for_shutdown();
     furi_hal_power_enable_external_3_3v();
@@ -525,12 +547,23 @@ float furi_hal_power_get_usb_voltage(void) {
     return ret;
 }
 
+// NOX: there is no switchable external 3V3 rail on this board - the ME6231 LDO feeds the
+// display, CC1101 and SD unconditionally and there is no load switch to gate. On stock
+// hardware these toggle gpio_periph_power (PA3); here that pin is PE4, which is the on-board
+// blue LED, the park pin for absent peripherals, and - since the nRF24 support landed - the
+// nRF24 CE line. Driving it from the power HAL would fight whoever owns it: furi_hal_sd_init()
+// power-cycles the "rail" on every mount retry, which would glitch CE out from under a running
+// nRF24 app, and `power 3v3 on/off` from the CLI would just blink the LED.
+//
+// So: no-ops. PE4 is left high-impedance by boot: furi_hal_resources_init() sets it open-drain
+// high, then furi_hal_rfid_pins_reset() (from furi_hal_rfid_init(), which runs later in
+// furi_hal_init()) drives gpio_rfid_carrier_out low and finally leaves the same pin Analog.
+// After that it belongs to whichever driver claims it - the nRF24 libs re-init it push-pull as
+// CE and return it to Analog on exit.
 void furi_hal_power_enable_external_3_3v(void) {
-    furi_hal_gpio_write(&gpio_periph_power, 1);
 }
 
 void furi_hal_power_disable_external_3_3v(void) {
-    furi_hal_gpio_write(&gpio_periph_power, 0);
 }
 
 void furi_hal_power_suppress_charge_enter(void) {

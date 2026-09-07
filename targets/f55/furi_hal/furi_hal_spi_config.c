@@ -100,10 +100,14 @@ void furi_hal_spi_config_init(void) {
 
 static void furi_hal_spi_bus_r_event_callback(FuriHalSpiBus* bus, FuriHalSpiBusEvent event) {
     if(event == FuriHalSpiBusEventInit) {
-        if(!furi_hal_spi_bus_r_mutex) furi_hal_spi_bus_r_mutex = furi_mutex_alloc(FuriMutexTypeNormal);
+        if(!furi_hal_spi_bus_r_mutex)
+            furi_hal_spi_bus_r_mutex = furi_mutex_alloc(FuriMutexTypeNormal);
         bus->current_handle = NULL;
     } else if(event == FuriHalSpiBusEventDeinit) {
-        if(furi_hal_spi_bus_r_mutex) { furi_mutex_free(furi_hal_spi_bus_r_mutex); furi_hal_spi_bus_r_mutex = NULL; }
+        if(furi_hal_spi_bus_r_mutex) {
+            furi_mutex_free(furi_hal_spi_bus_r_mutex);
+            furi_hal_spi_bus_r_mutex = NULL;
+        }
     } else if(event == FuriHalSpiBusEventLock) {
         furi_check(furi_mutex_acquire(furi_hal_spi_bus_r_mutex, FuriWaitForever) == FuriStatusOk);
     } else if(event == FuriHalSpiBusEventUnlock) {
@@ -120,13 +124,16 @@ FuriHalSpiBus furi_hal_spi_bus_r = {
     .callback = furi_hal_spi_bus_r_event_callback,
 };
 
-
 static void furi_hal_spi_bus_d_event_callback(FuriHalSpiBus* bus, FuriHalSpiBusEvent event) {
     if(event == FuriHalSpiBusEventInit) {
-        if(!furi_hal_spi_bus_r_mutex) furi_hal_spi_bus_r_mutex = furi_mutex_alloc(FuriMutexTypeNormal);
+        if(!furi_hal_spi_bus_r_mutex)
+            furi_hal_spi_bus_r_mutex = furi_mutex_alloc(FuriMutexTypeNormal);
         bus->current_handle = NULL;
     } else if(event == FuriHalSpiBusEventDeinit) {
-        if(furi_hal_spi_bus_r_mutex) { furi_mutex_free(furi_hal_spi_bus_r_mutex); furi_hal_spi_bus_r_mutex = NULL; }
+        if(furi_hal_spi_bus_r_mutex) {
+            furi_mutex_free(furi_hal_spi_bus_r_mutex);
+            furi_hal_spi_bus_r_mutex = NULL;
+        }
     } else if(event == FuriHalSpiBusEventLock) {
         furi_check(furi_mutex_acquire(furi_hal_spi_bus_r_mutex, FuriWaitForever) == FuriStatusOk);
     } else if(event == FuriHalSpiBusEventUnlock) {
@@ -343,8 +350,11 @@ static void furi_hal_spi_bus_handle_external_event_callback(
 // NOX: stock external-SPI pins (PA6/PA7/PA4) collide with the RIGHT button, CC1101 CS and
 // SD CS on this board - an app opening the external bus would drive a button pin push-pull
 // (short if pressed) and toggle live chip-selects. This board has no external SPI header, so
-// point the handle at the shared SPI1 bus with CS on the dead card-detect pin (PA15). If ever
-// acquired it just shares the real bus (mutex-serialised) and clobbers nothing live.
+// point the handle at the shared SPI1 bus with CS on PA9 (ex power-I2C SCL). PA9 is the
+// nRF24 CSN on this board - see docs/hardware/plug-in-headers.md, Bay 2 - so this handle IS
+// the nRF24 handle (applications_user/nrf_*/.../nrf24.h use furi_hal_spi_bus_handle_external,
+// with CE on PE4). NFC keeps its own CS on PA8 and the internal CC1101 keeps PA7, so all
+// three devices have distinct chip selects on the one mutex-serialised SPI1 bus.
 const FuriHalSpiBusHandle furi_hal_spi_bus_handle_external = {
     .bus = &furi_hal_spi_bus_r,
     .callback = furi_hal_spi_bus_handle_external_event_callback,
