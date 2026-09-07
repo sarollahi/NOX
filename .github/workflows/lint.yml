@@ -1,0 +1,74 @@
+name: Lint
+
+# Format checks for the code this project owns.
+#
+# Why not `./fbt lint_all`: fbt's LINT_SOURCES (firmware.scons) and PY_LINT_SOURCES
+# (SConstruct) both include `applications_user`, which is where NOX vendors 230+ third-party
+# apps. Measured against the repo's own .clang-format and black config, that tree carries
+# ~39,700 clang-format violations and 45 unformatted .fam files, none of them NOX's code. A
+# whole-tree gate would therefore be permanently red and useless. These jobs check the trees
+# that are actually clean and that NOX actually maintains:
+#
+#   C/H     targets/, furi/, applications/   (0 violations at time of writing)
+#   Py      targets/, site_scons/, SConstruct, firmware.scons, fbt_options.py
+#
+# Deliberately excluded: applications_user/ (vendored), applications/system/js_app/packages
+# (not C), and scripts/ (scripts/version.py and scripts/sconsdist.py are upstream files that
+# are not clean under the pinned black).
+#
+# Tool versions are pinned because the checks are version-sensitive: clang-format 19+ reformats
+# the `(uint32_t) & (spi->DR)` casts in upstream furi_hal files and would report false failures.
+# 18.1.8 matches what the fbt toolchain ships, so these jobs need no ARM toolchain download.
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format-c:
+    name: clang-format (C/H)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install clang-format
+        run: pip install "clang-format==18.1.8"
+
+      - name: Check formatting
+        run: |
+          mapfile -t files < <(
+            find targets furi applications \
+              \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' -o -name '*.cxx' \) \
+              -not -path 'applications/system/js_app/packages/*' \
+            | sort
+          )
+          echo "Checking ${#files[@]} files"
+          clang-format --Werror --style=file --dry-run "${files[@]}"
+
+  format-py:
+    name: black (Python / SCons / fam)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install black
+        run: pip install "black==24.10.0"
+
+      - name: Check formatting
+        run: |
+          black --check --diff \
+            --include '(\.scons|\.py|SConscript|SConstruct|\.fam)$' \
+            targets site_scons SConstruct firmware.scons fbt_options.py

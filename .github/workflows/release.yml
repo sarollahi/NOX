@@ -42,9 +42,42 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir -p out
+          # DIST_SUFFIX defaults to "local", so dist/f55-C/ holds flipper-z-f55-*-local.*
           cp dist/f55-C/flipper-z-f55-full-local.bin out/nox-firmware.bin
           cp dist/f55-C/flipper-z-f55-full-local.dfu out/nox-firmware.dfu
-          cd out && sha256sum nox-firmware.* > SHA256SUMS.txt && cat SHA256SUMS.txt
+          # Full update bundle: fw + radio stack + resources + manifest. This is the easy
+          # install path (qFlipper "Install from file" / lab.flipper.net) and updater_package
+          # already builds it, so ship it instead of discarding it.
+          cp dist/f55-C/flipper-z-f55-update-local.tgz out/nox-update.tgz
+          # Unstripped ELF: needed to symbolise a crash dump or attach a debugger to a release.
+          cp dist/f55-C/flipper-z-f55-firmware-local.elf out/nox-firmware.elf
+          # SDK bundle: lets anyone build a .fap against this exact firmware without the
+          # firmware tree (ufbt --sdk-file=...). Produced by updater_package alongside the rest.
+          cp dist/f55-C/flipper-z-f55-sdk-local.zip out/nox-sdk.zip
+          cd out && sha256sum nox-* > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Check firmware fits below the BLE radio stack
+        run: |
+          # The BLE radio stack lives near the top of the same 1MB flash and the linker does
+          # NOT reserve it, so an oversized image silently overwrites it: CPU2 gets garbage and
+          # the board hardfaults before USB init, with no way back in over USB.
+          # See targets/f55/README_NOX.md 10.2.
+          #
+          # Corroborated bounds: 812,604 bytes boots and runs; ~864K bricked a board. The
+          # radio stack sits at 0x080D7000, i.e. 880,640 bytes in, which is consistent with
+          # both observations. Gate below that with a margin.
+          STACK_OFFSET=880640      # 0x080D7000 - 0x08000000
+          MARGIN=8192
+          LIMIT=$(( STACK_OFFSET - MARGIN ))
+          SIZE=$(stat -c%s out/nox-firmware.bin)
+          echo "firmware: $SIZE bytes / limit $LIMIT (radio stack at $STACK_OFFSET)"
+          if [ "$SIZE" -gt "$LIMIT" ]; then
+            echo "::error::Firmware is $SIZE bytes, over the $LIMIT limit. It would overwrite"
+            echo "::error::the BLE radio stack and brick the board. Drop apps or confirm the"
+            echo "::error::real stack address with STM32CubeProgrammer before raising the limit."
+            exit 1
+          fi
+          echo "::notice::Firmware $SIZE bytes, $(( LIMIT - SIZE )) bytes of headroom."
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -61,5 +94,12 @@ jobs:
           body: |
             ## NOX firmware ${{ github.ref_name }}
 
-            Flash `nox-firmware.bin` at `0x08000000`, or install `nox-firmware.dfu` with qFlipper.
-            See [docs/setup.md](docs/setup.md). Verify against `SHA256SUMS.txt`.
+            | Asset | Use |
+            |---|---|
+            | `nox-update.tgz` | **Easiest install.** qFlipper "Install from file", or lab.flipper.net. Firmware + radio stack + SD resources in one bundle. |
+            | `nox-firmware.dfu` | Firmware only, via qFlipper or STM32CubeProgrammer. |
+            | `nox-firmware.bin` | Firmware only, flash at `0x08000000`. |
+            | `nox-sdk.zip` | Build your own `.fap` against this build: `ufbt --sdk-file=nox-sdk.zip`. |
+            | `nox-firmware.elf` | Unstripped ELF for debugging and crash-dump symbolisation. |
+
+            Verify downloads against `SHA256SUMS.txt`. Setup and wiring: [docs/setup.md](docs/setup.md).
