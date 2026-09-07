@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 
 from ansi.color import fg
@@ -107,8 +108,36 @@ def _proto_ver_generator(target, source, env):
         fetch(unshallow=True)
         git_describe = describe()
 
+    def describe_from_changelog():
+        # NOX: this tree vendors assets/protobuf as ordinary files rather than as a git
+        # submodule, so there are no protobuf tags to describe. `git describe` run in that
+        # directory therefore walks up to the firmware repo and either fails outright or
+        # returns a firmware release tag such as "v0.1.0", which is not a protobuf version and
+        # does not even split into two parts. Fall back to the version the vendored copy
+        # declares in its own Changelog, whose top entry is the current one.
+        changelog = os.path.join(src_dir, "Changelog")
+        try:
+            with open(changelog, "rt") as file:
+                for line in file:
+                    match = re.match(r"^##\s*\[(\d+)\.(\d+)\]", line)
+                    if match:
+                        return f"{match.group(1)}.{match.group(2)}"
+        except OSError:
+            pass
+        return None
+
+    # A firmware tag like "v0.1.0" is not a protobuf version; reject anything not X.Y.
+    if git_describe and not re.fullmatch(r"\d+\.\d+", git_describe):
+        git_describe = None
+
     if not git_describe:
-        raise StopError("Failed to process git tags for protobuf versioning")
+        git_describe = describe_from_changelog()
+
+    if not git_describe:
+        raise StopError(
+            "Failed to determine protobuf version: no X.Y git tag is reachable in "
+            f"{src_dir} and no '## [X.Y]' entry was found in its Changelog"
+        )
 
     git_major, git_minor = git_describe.split(".")
     version_file_data = (

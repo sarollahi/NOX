@@ -1,6 +1,12 @@
 build/
 dist/
-toolchain/
+# NOX: anchored to the repo root on purpose. An unanchored 'toolchain/' also matches
+# scripts/toolchain/, which silently excluded fbtenv.sh from the initial commit and made
+# the tree unbuildable in place. This still ignores the ARM toolchain fbt downloads to ./toolchain.
+/toolchain/
+# NOX: SCons build database. It was committed by accident and is rewritten by every
+# build, so it dirtied the tree on each run.
+.sconsign.dblite
 .build/
 *.o
 *.map
