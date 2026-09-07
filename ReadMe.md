@@ -8,7 +8,7 @@
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 [![Based on: Flipper Zero](https://img.shields.io/badge/based%20on-Flipper%20Zero%20(Unleashed)-6f4e37)](https://github.com/DarkFlippers/unleashed-firmware)
 [![MCU: STM32WB55CGU6](https://img.shields.io/badge/MCU-STM32WB55CGU6-6f4e37)](docs/hardware/pinout.md)
-[![Apps: 147](https://img.shields.io/badge/apps-147%20%2B%2086%20plugins-6f4e37)](docs/app-catalog.md)
+[![Apps: 255](https://img.shields.io/badge/apps-255%20%2B%20130%20plugins-6f4e37)](docs/app-catalog.md)
 
 </div>
 
@@ -73,7 +73,8 @@ First-board bring-up (radio stack, OTP, the reliable `reboot2dfu` flashing metho
 | Infrared | learn/replay remotes, universal TV/AC database (plug-in IR module) | [features.md](docs/features.md) |
 | USB / iButton | BadUSB, HID, U2F, iButton read/emulate/fuzz | [features.md](docs/features.md) |
 
-Full catalogue (147 apps + 86 plugins): **[docs/app-catalog.md](docs/app-catalog.md)**.
+A default `f55` build deploys **255 apps + 130 plugins** to the SD card. Descriptions:
+**[docs/app-catalog.md](docs/app-catalog.md)**.
 
 ## Plug-in add-on bays
 
@@ -100,6 +101,9 @@ Full detail with the *why*: **[docs/limitations.md](docs/limitations.md)**.
 | Build & flash | [setup.md](docs/setup.md) |
 | See every feature | [features.md](docs/features.md) |
 | Browse all apps | [app-catalog.md](docs/app-catalog.md) |
+| Why stock Flipper `.fap`s don't load | [api-compatibility.md](docs/api-compatibility.md) |
+| Momentum UI feature status | [momentum-ui-port.md](docs/momentum-ui-port.md) |
+| Interface options (lock clock, text symbols) | [features.md](docs/features.md#interface) |
 | Understand the trade-offs | [limitations.md](docs/limitations.md) |
 | Use it responsibly | [SECURITY.md](SECURITY.md) |
 

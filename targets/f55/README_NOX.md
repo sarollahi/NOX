@@ -50,7 +50,9 @@ All of CC1101, the LCD, the SD card and the ST25R3916 share **one SPI bus (SPI1)
 | **SD card**       | CS      | PA4     |
 |                   | DET     | PA3  (Adafruit 4682: HIGH=card in) |
 | **ST25R3916** NFC | CS      | PA8     |
-|                   | IRQ     | PA0  (EXTI0, rising) |
+|                   | IRQ     | PA2  (ex battery-ADC pin) |
+| **Infrared**      | TX      | PB9 (TIM1_CH3N) |
+|                   | RX      | PA0 (TIM2_CH1) |
 | **ESP32 (UART)**  | TX→esp RX | PB6 (USART1, 115200 8N1) |
 |                   | RX←esp TX | PB7 |
 
@@ -59,9 +61,11 @@ All of CC1101, the LCD, the SD card and the ST25R3916 share **one SPI bus (SPI1)
 | Function | MCU pin | Wiring |
 |----------|---------|--------|
 | **Speaker** | PA6 | TIM16_CH1/AF14 → piezo, or small speaker via NPN + flyback |
-| **Vibro**   | PA5 | motor via NPN (base 1kΩ) + flyback diode; not straight to the pin |
 | **iButton** | PA10 | 1-Wire data + **1kΩ pull-up to 3V3** + contact ring. (Was PH3 — moved: PH3 is BOOT0.) |
-| **Battery %** | PA2 | 100k/100k divider from **raw 18650(+)** to PA2, 100nF PA2→GND. ADC1_IN7. |
+
+**Dropped to make room for Infrared** (see `git show 3df4a7ac`): **Vibro** (was PA5, now the
+'165 clock; parked on non-bonded PC1) and **Battery %** (was the PA2 ADC divider, now the NFC
+IRQ). Nothing needs wiring for either.
 
 **Buttons — via one SN74HC165 (PISO shift register).** All 6 buttons hang off the '165's
 parallel inputs; the MCU reads them serially through 3 pins (the input service polls at 10 ms):
@@ -69,7 +73,7 @@ parallel inputs; the MCU reads them serially through 3 pins (the input service p
 | '165 pin | → MCU | | '165 input | Button |
 |----------|-------|-|-----------|--------|
 | PL (SH/LD, pin1) | PB8 | | D0 (A) | UP |
-| CP (CLK, pin2)   | PB9 | | D1 (B) | DOWN |
+| CP (CLK, pin2)   | PA5 | | D1 (B) | DOWN |
 | Q7 (QH, pin9)    | PA15 | | D2 (C) | RIGHT |
 | CE (pin15) | GND | | D3 (D) | LEFT |
 | DS (pin10) | GND | | D4 (E) | OK |
@@ -82,7 +86,8 @@ parallel inputs; the MCU reads them serially through 3 pins (the input service p
 
 > **Leave PH3 unconnected.** It's BOOT0; the WeAct carrier's pull-down + BOOT0 button handle
 > flash-vs-DFU boot. Nothing (not even iButton — that's why it moved to PA10) goes on PH3.
-> PA9 (ex power-I²C SCL) and PE4 (blue LED) are the only remaining spares.
+> No general-purpose spares are left: PA9 (ex power-I²C SCL) is the parked external-SPI CS and
+PE4 (blue LED) is the nRF24 CE.
 
 ## Expansion header (1×14 female, rear wall)
 
@@ -99,8 +104,8 @@ Flipper Zero GPIO header so add-on wiring guides translate directly.
 | 5 | RX | PB7 (USART1 RX) | ← add-on TX |
 | 6 | SCL | PA9 (I2C1) | |
 | 7 | SDA | PA10 (I2C1) | |
-| 8 | GPIO | PA0 | ADC-capable; ex-NFC IRQ (no NFC module fitted) |
-| 9 | GPIO | PA3 | ADC-capable |
+| 8 | GPIO | PA0 | **now Infrared RX** (TIM2_CH1) — not a free GPIO |
+| 9 | GPIO | PA3 | SD card-detect (Adafruit 4682 DET) — not a free GPIO |
 | 10 | GPIO | PA8 | ex-NFC CS (no NFC module fitted) |
 | 11 | NRST | | reset; lets SWD connect-under-reset |
 | 12 | SWDIO | PA13 | reflash / debug with the case closed |
@@ -181,14 +186,16 @@ sed -i '' -E 's/^([A-Za-z]+),\?,/\1,+,/; s/^Version,v,/Version,+,/' targets/f55/
 | ESP32 / UART add-ons | ✅ USART1 PB6/PB7 (Marauder etc. as `.fap` on SD) |
 | iButton / 1-Wire | ✅ PA10 + 1kΩ pull-up (app is MENUEXTERNAL `.fap`) |
 | Speaker | ✅ PA6 (TIM16_CH1/AF14) |
-| Vibro | ✅ PA5 |
-| Battery % | ✅ ADC on PA2 (100k/100k divider), no gauge chip |
+| Infrared | ✅ TX PB9 (TIM1_CH3N) / RX PA0 (TIM2_CH1) |
+| nRF24 2.4 GHz | ✅ shared SPI1, CE on PE4 |
+| Vibro | ❌ dropped — PA5 became the '165 clock |
+| Battery % | ❌ dropped — PA2 became the NFC IRQ; no gauge chip either |
 | 125 kHz LF RFID | ❌ no LF coil/driver + PB13/PC5 not on package |
-| Infrared | ❌ dropped (no free timer pin left) |
 
-All the above are compiled in. Battery % comes from the ADC path (`furi_hal_power`
-falls back to it whenever no BQ27220 gauge answers). Everything not fitted still opens in the
-menu and simply senses/drives nothing — missing hardware never hangs or bricks (see §7).
+All the above are compiled in. There is no battery sensing at all on this board — no BQ27220
+gauge and no ADC divider — so `furi_hal_power_get_pct()` reports a flat 100%. Everything not
+fitted still opens in the menu and simply senses/drives nothing — missing hardware never hangs
+or bricks (see §7).
 
 > **Note — the buttons and these peripherals share pins by design.** Moving the 6 buttons onto
 > the '165 is what freed PA2/PA5/PA6 (battery/vibro/speaker) and PB8/PB9/PA15 (the '165 lines).
@@ -198,8 +205,10 @@ menu and simply senses/drives nothing — missing hardware never hangs or bricks
 
 ## 5. Known bench-tuning knobs / gaps
 
-- **SD card-detect** is parked on PA15 (no CD line on cheap SD modules); mounting relies on
-  SPI probe. If the card won't mount, force "present" or wire a real CD pin.
+- **SD card-detect is a real line on PA3** (Adafruit 4682 DET, **HIGH = card inserted** — the
+  opposite polarity to a stock Flipper). `furi_hal_sd_is_present()` reads it directly, so
+  detection gates mounting and the retry count is down to 3. If a card never mounts, check DET
+  polarity first. (PA15 is the '165 Q7 — it is **not** a card-detect pin.)
 - **LCD contrast/bias**: cheap ST756x panels vary. If the image is blank/ghosted, adjust the
   u8g2 contrast/bias in the display init (shared `lib/`), not this target.
 - **Single-bus SPI is serialized** by one mutex (required — a second enable of SPI1 hard-crashes
@@ -208,6 +217,44 @@ menu and simply senses/drives nothing — missing hardware never hangs or bricks
 - **`gpio_pins[]` external-header table** is inherited from f7 and still lists pins now used by
   modules (PA4/PA6/PA7/PB2/PB3). The GPIO app could drive them into conflict; trim the table if
   you expose a user GPIO header.
+- **`cc1101_ext` is deliberately not built for f55 — leave it that way.**
+  `applications/drivers/subghz/application.fam` declares `targets=["f7"]`, so the external-CC1101
+  plugin never compiles here. That is load-bearing: its pins are hardcoded for a real Flipper's
+  expansion header and are wrong on this board — `g0_pin` is **PB2, the LCD CS**, and the E07 amp
+  line is PC3. Apps that request the external radio get `NULL` from
+  `subghz_devices_get_by_name()` and fall back to the internal CC1101 on PA7, which is the
+  correct behaviour. **Do not add `"f55"` to that fam** without repointing both pins first, or
+  the first external-radio TX will drive the display's chip-select.
+- **SPI device coexistence is already solved by distinct chip selects; there is no
+  `external_extra` bus and none is needed.** Momentum adds a second external-SPI handle
+  (`furi_hal_spi_bus_handle_external_extra`) so an external CC1101 and an nRF24 can hold
+  separate chip selects. On this board that problem does not arise: every SPI device already
+  has its own CS on the single mutex-serialised SPI1 bus.
+
+  | Device | Handle | CS | Extra lines |
+  |---|---|---|---|
+  | CC1101 SubGHz (internal) | `..._subghz` | PA7 | GDO0 PA1 |
+  | LCD / SD | `..._display` / `..._sd_*` | PB2 / PA4 | SD DET PA3 |
+  | ST25R3916 NFC | `..._nfc` | PA8 | IRQ PA2 |
+  | nRF24 | `..._external` | PA9 | CE PE4 |
+
+  A fourth handle would need a fourth chip-select pin, and this package has none free (see the
+  spares note in §1), so adding one could only park it on a pin that already means something.
+  The RF-switch GPIO parked on non-bonded PC3 is not a CS conflict either - it is an unused
+  control line for a switch this board does not have, and non-bonded is the correct place for
+  it. Combination support (SubGHz + NFC, SubGHz + nRF24, ESP32 + NFC, ...) is listed in
+  `docs/hardware/plug-in-headers.md`.
+- **`furi_hal_power_{enable,disable}_external_3_3v()` are no-ops on this target.** There is no
+  switchable 3V3 rail (the ME6231 LDO is always on) and the pin those functions drive,
+  `gpio_periph_power`, is **PE4** here — blue LED, park pin, and the **nRF24 CE**. Left active
+  they would glitch CE whenever `furi_hal_sd_init()` power-cycles the card on a mount retry, and
+  `power 3v3 on/off` in the CLI would just blink the LED. PE4 is parked once at init and then
+  belongs to whichever driver claims it.
+- **`furi_hal_adc` uses VDDA, not VREFBUF** (`targets/f55/furi_hal/furi_hal_adc.c`). VREF+ is not
+  bonded out on the UFQFPN48 package, so VREFBUF can never become ready; stock code crashed on a
+  `furi_check("VREF fail")` after a 500 ms wait. The override references VDDA and calibrates it
+  from the internal VREFINT. Accuracy now tracks the 3V3 rail rather than a 2.048 V buffer, so a
+  requested `FuriHalAdcScale` is range-checked but not honoured.
 
 ---
 
@@ -361,8 +408,11 @@ reclaim ~150 K if more app space is ever needed.
 ### 10.3 Current known-good configuration
 - Firmware **812,604 bytes** — display, buttons, USB/CLI, BLE stack all working.
 - Apps: stock set only (no extra NFC parsers / CLI plugins — they overflow flash).
-- **SD disabled** (`furi_hal_sd_is_present()` returns false) — the blue AMS1117 SD module never
-  mounted; leaving auto-mount on caused repeated multi-second UI freezes.
-- **NFC not used** — PA8 (CS) and PA0 (IRQ) are free.
-- Buttons: UP=PB8, DOWN=PA5, LEFT=PA2, RIGHT=PA6, OK=PA15, BACK=PB9 (4-pin tactile: use
-  **diagonal** legs, other side to GND).
+- **SD enabled via a real card-detect on PA3.** Earlier builds forced
+  `furi_hal_sd_is_present()` to false because a card-detect-less module retry-mounted forever
+  and froze the UI for seconds at a time. With the Adafruit 4682 DET wired, detection gates
+  mounting and that stall is gone.
+- **NFC** — CS on PA8, IRQ on PA2. (PA0 is Infrared RX now.)
+- Buttons: all six read through the SN74HC165 — **PL=PB8, CP=PA5, Q7=PA15**, buttons on D0..D5
+  (D0=Up D1=Down D2=Right D3=Left D4=Ok D5=Back). The old direct-GPIO button map is gone; the
+  '165 is required for navigation.

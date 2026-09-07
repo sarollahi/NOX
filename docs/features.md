@@ -144,6 +144,28 @@ On-board BLE (light stack) + ESP32 over the Serial bay (flash the ESP with **ESP
 - **[YRM100] UHF RFID** (`uhf_rfid`) — The app leverages the YRM100 module to enable UHF RFID functionality
 - **Wiegand Reader** (`wiegand_reader`) — This application can be used to test Wiegand readers and keypads
 
+## Interface
+
+Additions on top of the stock Unleashed UI. All of them default to off, so the interface is
+unchanged until you turn something on. **Settings → Desktop**:
+
+| Setting | What it does |
+|---|---|
+| Lock Screen Clock | Large centred clock on the idle lock screen, which is otherwise blank |
+| Lock Screen Seconds | Switches that clock to `HH:MM:SS` |
+| Lock Screen Date | Adds the date under the clock |
+| Hide Battery Icon | Removes the status-bar battery icon. This board has no fuel gauge, so the icon can only ever report 100% |
+
+**Text entry.** Long-pressing a digit on the on-screen keyboard now types its shifted symbol:
+`1`→`!`, `2`→`@`, `3`→`#`, `4`→`$`, `5`→`%`, `6`→`^`, `7`→`&`, `8`→`*`, `9`→`(`, `0`→`)`. Long
+press previously repeated the digit, so nothing was displaced; letters still capitalise and `_`
+still gives a space. This reaches every app that asks for a string, which matters for device-name
+spoofing and BadUSB payloads that need characters a filename-safe keyboard omits.
+
+**File Search** (`nox_file_search`, Tools). Recursive search of the SD card by file name, with a
+scrollable full-path view. Shipped as a `.fap` rather than folded into the Archive app, so it
+costs no firmware flash on a board that has little to spare.
+
 ## USB, iButton & security tools
 
 USB device modes, 1-Wire, and assorted security utilities:

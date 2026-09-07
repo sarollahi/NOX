@@ -1,6 +1,11 @@
-# NOX App Library — 245 apps built for f55
+# NOX App Library — apps available on f55
 
-`★` = on the current SD build (146). Others archived — copy any `.fap` into the SD `apps/<Category>/` to use it.
+A default `f55` build deploys **255 `.fap` apps and 130 standalone `.fal` plugins** to the SD
+card: every manifest declaring `f55`/`all` support that is not a debug app or an example.
+
+`★` = present on the maintainer's hand-trimmed card. This is **not** a build option — fbt has
+no curated-subset flag, so a fresh build gives you everything. Delete `.fap` files from the SD
+`apps/<Category>/` folders to trim it yourself; no rebuild or reflash needed.
 `(ported)` = rewrote for the f55/current API. Infrared is supported (plug-in IR module); only LF-RFID (125/134 kHz) is excluded — no analog front-end on this board.
 
 
@@ -196,7 +201,7 @@
 - ★ **tpms_bridge** — TPMS Bridge: Reads car tyre pressure sensors: 39 protocols, pressure, temperature, si
 - ★ **weather_station** — Weather Station: Receive weather data from a wide range of supported Sub-1GHz remote sens
 
-## Tools (48)
+## Tools (49)
 - ★ **barcode_app** — Barcode App: App allows you to display various barcodes on flipper screen
 -   **brainfuck** — Brainfuck: Brainfuck language interpreter
 -   **caesar_cipher** — Caesar Cipher: Encrypt and decrypt text using Caesar Cipher
@@ -228,6 +233,7 @@
 -   **net_calculator** — Net Calculator: Offline IPv4 VLSM subnet calculator
 - ★ **nfc_rfid_detector** — RFID detector: Identify the reader type: NFC (13 MHz) and/or RFID (125 KHz).
 -   **nickname_generator** — NickName Generator: 
+- ★ **nox_file_search** — File Search: Recursively search the SD card for files by name
 -   **passgen** — Password Generator: Simple password generator
 -   **pocketlab** — PocketLab: Learn your Flipper with short, gamified hands-on labs.
 -   **pomodoro_timer** — Pomodoro Timer: Use your Flipper Zero as a Pomodoro Timer.
