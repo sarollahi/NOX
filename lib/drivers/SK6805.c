@@ -21,9 +21,17 @@
 
 /* Настройки */
 #define SK6805_LED_COUNT 3 //Количество светодиодов на плате подсветки
-#define SK6805_LED_PIN   &led_pin //Порт подключения светодиодов
+/* NOX: was &led_pin, a hardcoded {GPIOA, LL_GPIO_PIN_8}. On a stock Flipper PA8 is the vibro
+ * pin, which is exactly what this mod sacrifices, so gpio_vibro resolves to the same PA8 there
+ * and behaviour is unchanged. It has to come from the target rather than be hardcoded because
+ * boards move that pin: on f55 PA8 is the ST25R3916 NFC chip-select, and bit-banging an LED
+ * waveform onto it would corrupt NFC transactions on the shared SPI1 bus. f55 parks vibro on
+ * non-bonded PC1, so the writes land nowhere and the chip-select is left alone. */
+#define SK6805_LED_PIN   &gpio_vibro
 
 #ifdef FURI_DEBUG
+// NOX: PA7 is the CC1101 chip-select on f55. Only reached in FURI_DEBUG builds, which this
+// project does not ship, but do not enable one with an RGB backlight fitted.
 #define DEBUG_PIN &gpio_ext_pa7
 #define DEBUG_INIT() \
     furi_hal_gpio_init(DEBUG_PIN, GpioModeOutputPushPull, GpioPullNo, GpioSpeedVeryHigh)
@@ -35,7 +43,6 @@
 #define DEBUG_SET_LOW()
 #endif
 
-static const GpioPin led_pin = {.port = GPIOA, .pin = LL_GPIO_PIN_8};
 static uint8_t led_buffer[SK6805_LED_COUNT][3];
 
 void SK6805_init(void) {

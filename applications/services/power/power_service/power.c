@@ -1,4 +1,5 @@
 #include "desktop/desktop_settings.h"
+#include <desktop/desktop.h>
 #include "power_i.h"
 
 #include <furi.h>
@@ -353,12 +354,29 @@ static void power_check_battery_level_change(Power* power) {
 
 void power_trigger_ui_update(Power* power) {
     DesktopSettings* settings = malloc(sizeof(DesktopSettings));
-    desktop_settings_load(settings);
+
+    /* NOX: read the desktop's live copy rather than reloading from storage.
+     *
+     * desktop_settings_load() only succeeds if the settings file can be read, and every settings
+     * file resolves onto the SD card here: there is no internal filesystem, so
+     * storage_process_alias() redirects /int to /ext/.int. With no card the load fails, the
+     * struct is zeroed, and the value the user just chose is replaced by the default before it is
+     * ever applied - so Battery View and Hide Battery Icon appeared to revert the moment you left
+     * the settings screen, while everything the desktop applies from its own RAM copy stayed put.
+     *
+     * The desktop already holds the authoritative in-RAM struct, so ask it. This is only ever
+     * called from an app, long after both services are up, so opening the record here cannot
+     * race service start-up the way it would at power_srv() init time. */
+    Desktop* desktop = furi_record_open(RECORD_DESKTOP);
+    desktop_api_get_settings(desktop, settings);
+    furi_record_close(RECORD_DESKTOP);
+
     power->displayBatteryPercentage = settings->displayBatteryPercentage;
-    // NOX: the gauge is absent on this board, so the icon can only ever report a flat 100%.
-    // Let it be hidden. Default 0 keeps it enabled exactly as before.
+    // The gauge is absent on this board, so the icon can only ever report a flat 100%. Let it be
+    // hidden. Default 0 keeps it enabled exactly as before.
     power->statusbar_hide_battery = settings->statusbar_hide_battery;
     free(settings);
+
     view_port_enabled_set(power->battery_view_port, !power->statusbar_hide_battery);
     view_port_update(power->battery_view_port);
 }
