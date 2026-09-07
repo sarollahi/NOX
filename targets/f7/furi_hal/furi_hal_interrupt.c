@@ -314,6 +314,55 @@ void MemManage_Handler(void) {
 }
 
 void BusFault_Handler(void) {
+    /* NOX: a bare "BusFault" localises nothing, and this board generates them: a retargeted HAL,
+     * five SPI devices sharing one bus, and hand-soldered wiring mean an unclocked peripheral, a
+     * wrong peripheral base or a dead module all land here. Decoding CFSR names the access type,
+     * and BFAR names the address, which usually identifies the peripheral outright.
+     *
+     * Ported from Momentum. Costs 440 bytes measured. Note the output goes out over the USB CDC
+     * console via furi_log_puts, so a console has to be attached at crash time; the post-reboot
+     * fault screen still shows only the "BusFault" string. */
+    furi_log_puts("\r\n" _FURI_LOG_CLR_E "Bus fault:\r\n");
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_LSPERR_Pos)) {
+        furi_log_puts(" - lazy stacking for exception entry\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_STKERR_Pos)) {
+        furi_log_puts(" - stacking for exception entry\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_UNSTKERR_Pos)) {
+        furi_log_puts(" - unstacking for exception return\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_IMPRECISERR_Pos)) {
+        furi_log_puts(" - imprecise data access\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_PRECISERR_Pos)) {
+        furi_log_puts(" - precise data access\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_IBUSERR_Pos)) {
+        furi_log_puts(" - instruction\r\n");
+    }
+
+    if(FURI_BIT(SCB->CFSR, SCB_CFSR_BFARVALID_Pos)) {
+        uint32_t busfault_address = SCB->BFAR;
+        furi_log_puts(" -- at 0x");
+
+        char tmp_str[] = "0xFFFFFFFF";
+        itoa(busfault_address, tmp_str, 16);
+        furi_log_puts(tmp_str);
+
+        furi_log_puts("\r\n");
+
+        if(busfault_address == (uint32_t)NULL) {
+            furi_log_puts(" -- NULL pointer dereference\r\n");
+        }
+    }
+    furi_log_puts(_FURI_LOG_CLR_RESET);
+
     furi_crash("BusFault");
 }
 
