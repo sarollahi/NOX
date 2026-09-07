@@ -34,6 +34,8 @@ struct Power {
     bool battery_low;
     bool show_battery_low_warning;
     uint8_t displayBatteryPercentage;
+    // NOX: 1 = keep the status-bar battery icon hidden. 0 (default) = stock, icon shown.
+    uint8_t statusbar_hide_battery;
     bool is_otg_requested;
     uint8_t battery_level;
     uint8_t power_off_timeout;

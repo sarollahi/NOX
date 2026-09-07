@@ -44,6 +44,13 @@ typedef struct {
     bool pin_locked;
     int8_t door_offset;
     DesktopViewLockedState view_state;
+    // NOX: idle lock screen clock. show_clock defaults to false, which reproduces the stock
+    // blank lock screen exactly.
+    bool show_clock;
+    bool show_seconds;
+    bool show_date;
+    bool format_12;
+    DateTime datetime;
 } DesktopViewLockedModel;
 
 void desktop_view_locked_set_callback(
@@ -133,6 +140,46 @@ static void desktop_view_locked_draw(Canvas* canvas, void* model) {
     } else if(view_state == DesktopViewLockedStateUnlockedHintShown) {
         canvas_set_font(canvas, FontPrimary);
         elements_multiline_text_framed(canvas, 42, 30 + STATUS_BAR_Y_SHIFT, "Unlocked");
+    } else if(view_state == DesktopViewLockedStateLocked && m->show_clock) {
+        // NOX: stock draws nothing in this state. Only reached when the user opted in.
+        char buffer[16];
+
+        uint8_t hour = m->datetime.hour;
+        if(m->format_12) {
+            if(hour > 12) {
+                hour -= 12;
+            }
+            if(hour == 0) {
+                hour = 12;
+            }
+        }
+
+        if(m->show_seconds) {
+            snprintf(
+                buffer,
+                sizeof(buffer),
+                "%02u:%02u:%02u",
+                hour,
+                m->datetime.minute,
+                m->datetime.second);
+        } else {
+            snprintf(buffer, sizeof(buffer), "%02u:%02u", hour, m->datetime.minute);
+        }
+
+        canvas_set_font(canvas, m->show_seconds ? FontPrimary : FontBigNumbers);
+        canvas_draw_str_aligned(canvas, 64, 36, AlignCenter, AlignCenter, buffer);
+
+        if(m->show_date) {
+            snprintf(
+                buffer,
+                sizeof(buffer),
+                "%02u.%02u.%04u",
+                m->datetime.day,
+                m->datetime.month,
+                m->datetime.year);
+            canvas_set_font(canvas, FontSecondary);
+            canvas_draw_str_aligned(canvas, 64, 55, AlignCenter, AlignCenter, buffer);
+        }
     }
 }
 
@@ -235,6 +282,39 @@ void desktop_view_locked_unlock(DesktopViewLocked* locked_view) {
     model->pin_locked = false;
     view_commit_model(locked_view->view, true);
     furi_timer_start(locked_view->timer, UNLOCKED_HINT_TIMEOUT_MS);
+}
+
+void desktop_view_locked_set_clock(
+    DesktopViewLocked* locked_view,
+    const DateTime* datetime,
+    bool format_12,
+    const DesktopSettings* settings) {
+    furi_assert(locked_view);
+    furi_assert(datetime);
+    furi_assert(settings);
+
+    DesktopViewLockedModel* model = view_get_model(locked_view->view);
+
+    const bool show_clock = settings->lock_show_clock;
+    const bool visible = show_clock && model->view_state == DesktopViewLockedStateLocked;
+    // Only ask for a redraw when the clock is actually on screen and the text would change.
+    const bool changed = visible &&
+                         (model->datetime.minute != datetime->minute ||
+                          model->datetime.hour != datetime->hour ||
+                          (settings->lock_show_seconds &&
+                           model->datetime.second != datetime->second) ||
+                          model->show_clock != show_clock ||
+                          model->show_seconds != (bool)settings->lock_show_seconds ||
+                          model->show_date != (bool)settings->lock_show_date ||
+                          model->format_12 != format_12);
+
+    model->show_clock = show_clock;
+    model->show_seconds = settings->lock_show_seconds;
+    model->show_date = settings->lock_show_date;
+    model->format_12 = format_12;
+    model->datetime = *datetime;
+
+    view_commit_model(locked_view->view, changed);
 }
 
 bool desktop_view_locked_is_locked_hint_visible(DesktopViewLocked* locked_view) {

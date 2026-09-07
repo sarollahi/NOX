@@ -49,6 +49,18 @@ typedef struct {
     uint8_t display_clock;
     FavoriteApp favorite_apps[FavoriteAppNumber];
     FavoriteApp dummy_apps[DummyAppNumber];
+
+    /* NOX additions. Every field below is deliberately "0 == the behaviour this firmware had
+     * before the field existed", so a zeroed struct (fresh install, failed load, or a migration
+     * from an older version) reproduces the stock UI exactly and nothing is lost. */
+
+    // Lock screen extras. Stock draws nothing at all while idle-locked; 0 keeps it that way.
+    uint8_t lock_show_clock; // 0 = blank lock screen, 1 = big centred clock
+    uint8_t lock_show_seconds; // 0 = HH:MM, 1 = HH:MM:SS (only if lock_show_clock)
+    uint8_t lock_show_date; // 0 = no date, 1 = date under the clock (only if lock_show_clock)
+
+    // Status bar. Named "hide_*" so 0 = shown = stock.
+    uint8_t statusbar_hide_battery; // 1 = drop the battery icon from the status bar
 } DesktopSettings;
 
 void desktop_settings_load(DesktopSettings* settings);

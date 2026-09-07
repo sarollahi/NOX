@@ -1,0 +1,11 @@
+App(
+    appid="nox_file_search",
+    name="File Search",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="nox_file_search_app",
+    stack_size=4 * 1024,
+    fap_category="Tools",
+    fap_author="NOX",
+    fap_version="1.0",
+    fap_description="Recursively search the SD card for files by name",
+)

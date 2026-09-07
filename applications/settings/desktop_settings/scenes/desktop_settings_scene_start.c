@@ -28,6 +28,13 @@ typedef enum {
     DesktopSettingsDummyDownLong,
     DesktopSettingsDummyOk,
     DesktopSettingsDummyOkLong,
+    // NOX: appended deliberately. These values index the variable item list, and the switch in
+    // desktop_settings_scene_start_on_event() keys off them, so inserting anywhere above would
+    // silently repoint every entry after it.
+    DesktopSettingsLockClock,
+    DesktopSettingsLockSeconds,
+    DesktopSettingsLockDate,
+    DesktopSettingsHideBattery,
 } DesktopSettingsEntry;
 
 #define AUTO_LOCK_DELAY_COUNT 9
@@ -95,6 +102,40 @@ static void desktop_settings_scene_start_clock_enable_changed(VariableItem* item
 
     variable_item_set_current_value_text(item, clock_enable_text[index]);
     app->settings.display_clock = index;
+}
+
+// NOX: all four reuse clock_enable_text/value, which is just OFF/ON. Index 0 (OFF) is the
+// stock behaviour in every case, so a freshly zeroed settings struct changes nothing.
+static void desktop_settings_scene_start_lock_clock_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, clock_enable_text[index]);
+    app->settings.lock_show_clock = clock_enable_value[index];
+}
+
+static void desktop_settings_scene_start_lock_seconds_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, clock_enable_text[index]);
+    app->settings.lock_show_seconds = clock_enable_value[index];
+}
+
+static void desktop_settings_scene_start_lock_date_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, clock_enable_text[index]);
+    app->settings.lock_show_date = clock_enable_value[index];
+}
+
+static void desktop_settings_scene_start_hide_battery_changed(VariableItem* item) {
+    DesktopSettingsApp* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+
+    variable_item_set_current_value_text(item, clock_enable_text[index]);
+    app->settings.statusbar_hide_battery = clock_enable_value[index];
 }
 
 static void desktop_settings_scene_start_auto_lock_delay_changed(VariableItem* item) {
@@ -194,6 +235,51 @@ void desktop_settings_scene_start_on_enter(void* context) {
     variable_item_list_add(variable_item_list, "DummyMode - Down Long", 1, NULL, NULL);
     variable_item_list_add(variable_item_list, "DummyMode - Ok", 1, NULL, NULL);
     variable_item_list_add(variable_item_list, "DummyMode - Ok Long", 1, NULL, NULL);
+
+    // NOX: appended, for the index reason noted on DesktopSettingsLockClock.
+    item = variable_item_list_add(
+        variable_item_list,
+        "Lock Screen Clock",
+        CLOCK_ENABLE_COUNT,
+        desktop_settings_scene_start_lock_clock_changed,
+        app);
+    value_index =
+        value_index_uint32(app->settings.lock_show_clock, clock_enable_value, CLOCK_ENABLE_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, clock_enable_text[value_index]);
+
+    item = variable_item_list_add(
+        variable_item_list,
+        "Lock Screen Seconds",
+        CLOCK_ENABLE_COUNT,
+        desktop_settings_scene_start_lock_seconds_changed,
+        app);
+    value_index =
+        value_index_uint32(app->settings.lock_show_seconds, clock_enable_value, CLOCK_ENABLE_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, clock_enable_text[value_index]);
+
+    item = variable_item_list_add(
+        variable_item_list,
+        "Lock Screen Date",
+        CLOCK_ENABLE_COUNT,
+        desktop_settings_scene_start_lock_date_changed,
+        app);
+    value_index =
+        value_index_uint32(app->settings.lock_show_date, clock_enable_value, CLOCK_ENABLE_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, clock_enable_text[value_index]);
+
+    item = variable_item_list_add(
+        variable_item_list,
+        "Hide Battery Icon",
+        CLOCK_ENABLE_COUNT,
+        desktop_settings_scene_start_hide_battery_changed,
+        app);
+    value_index = value_index_uint32(
+        app->settings.statusbar_hide_battery, clock_enable_value, CLOCK_ENABLE_COUNT);
+    variable_item_set_current_value_index(item, value_index);
+    variable_item_set_current_value_text(item, clock_enable_text[value_index]);
 
     variable_item_list_set_enter_callback(
         variable_item_list, desktop_settings_scene_start_var_list_enter_callback, app);

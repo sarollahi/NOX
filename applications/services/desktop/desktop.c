@@ -20,6 +20,7 @@ static void desktop_auto_lock_arm(Desktop*);
 static void desktop_auto_lock_inhibit(Desktop*);
 static void desktop_start_auto_lock_timer(Desktop*);
 static void desktop_apply_settings(Desktop*);
+static void desktop_lock_clock_update(Desktop*);
 
 static void desktop_loader_callback(const void* message, void* context) {
     furi_assert(context);
@@ -77,13 +78,18 @@ static void desktop_clock_reconfigure(Desktop* desktop) {
 
     desktop_clock_update(desktop);
 
-    if(desktop->settings.display_clock) {
+    // NOX: the same 1 Hz timer now also drives the optional lock-screen clock, so it has to run
+    // when either consumer wants it. Both flags default off, so an untouched install is unchanged.
+    if(desktop->settings.display_clock || desktop->settings.lock_show_clock) {
         furi_timer_start(desktop->update_clock_timer, furi_ms_to_ticks(1000));
     } else {
         furi_timer_stop(desktop->update_clock_timer);
     }
 
     view_port_enabled_set(desktop->clock_viewport, desktop->settings.display_clock);
+
+    // Prime it now rather than waiting up to a second for the first tick.
+    desktop_lock_clock_update(desktop);
 }
 
 static void desktop_clock_draw_callback(Canvas* canvas, void* context) {
@@ -223,6 +229,21 @@ static void desktop_auto_lock_inhibit(Desktop* desktop) {
     }
 }
 
+// NOX: the lock screen clock is deliberately independent of the status-bar clock view port -
+// that one is suppressed when the status bar runs out of room, which has nothing to do with the
+// full-screen lock display. Does nothing unless the user turned it on.
+static void desktop_lock_clock_update(Desktop* desktop) {
+    if(!desktop->settings.lock_show_clock) return;
+
+    DateTime curr_dt;
+    furi_hal_rtc_get_datetime(&curr_dt);
+    desktop_view_locked_set_clock(
+        desktop->locked_view,
+        &curr_dt,
+        locale_get_time_format() == LocaleTimeFormat12h,
+        &desktop->settings);
+}
+
 static void desktop_clock_timer_callback(void* context) {
     furi_assert(context);
     Desktop* desktop = context;
@@ -234,6 +255,8 @@ static void desktop_clock_timer_callback(void* context) {
     }
 
     view_port_enabled_set(desktop->clock_viewport, clock_enabled);
+
+    desktop_lock_clock_update(desktop);
 }
 
 static void desktop_apply_settings(Desktop* desktop) {

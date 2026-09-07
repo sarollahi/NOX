@@ -149,6 +149,48 @@ static char char_to_uppercase(const char letter) {
     }
 }
 
+/* NOX: shifted digits.
+ *
+ * This keyboard is 3 rows tall and the bottom row already reaches y=63 of a 64px display, so
+ * there is no room for a fourth row or an extra mode-toggle key, and every existing cell is
+ * taken. But digits have no uppercase, so char_to_uppercase() returned them unchanged and a
+ * long press on a digit inserted the same digit it already typed - dead input space.
+ *
+ * Reusing it gives ten characters that a filename-safe keyboard otherwise cannot produce, which
+ * is what device-name spoofing and BadUSB payload strings need. The mapping is the one printed
+ * on every physical keyboard, so it needs no discovery.
+ *
+ * Nothing that worked before changes: letters still capitalise, '_' still long-presses to space,
+ * and the caller applies this on an explicit long press only - never on the
+ * auto-capitalise-the-first-character path - so a name starting with a digit is unaffected.
+ */
+static char char_to_shifted_digit(const char letter) {
+    switch(letter) {
+    case '1':
+        return '!';
+    case '2':
+        return '@';
+    case '3':
+        return '#';
+    case '4':
+        return '$';
+    case '5':
+        return '%';
+    case '6':
+        return '^';
+    case '7':
+        return '&';
+    case '8':
+        return '*';
+    case '9':
+        return '(';
+    case '0':
+        return ')';
+    default:
+        return letter;
+    }
+}
+
 static void text_input_backspace_cb(TextInputModel* model) {
     if(model->clear_default_text) {
         model->text_buffer[0] = 0;
@@ -377,6 +419,12 @@ static void text_input_handle_ok(TextInput* text_input, TextInputModel* model, I
             if(text_length < (model->text_buffer_size - 1)) {
                 if(shift != (text_length == 0)) {
                     selected = char_to_uppercase(selected);
+                }
+                // NOX: gated on `shift` alone, deliberately not on the XOR above, so the
+                // auto-capitalise-first-character rule can never turn a leading digit into a
+                // symbol. Only a real long press reaches this.
+                if(shift) {
+                    selected = char_to_shifted_digit(selected);
                 }
                 if(model->clear_default_text) {
                     model->text_buffer[0] = selected;

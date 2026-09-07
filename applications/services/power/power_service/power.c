@@ -355,7 +355,11 @@ void power_trigger_ui_update(Power* power) {
     DesktopSettings* settings = malloc(sizeof(DesktopSettings));
     desktop_settings_load(settings);
     power->displayBatteryPercentage = settings->displayBatteryPercentage;
+    // NOX: the gauge is absent on this board, so the icon can only ever report a flat 100%.
+    // Let it be hidden. Default 0 keeps it enabled exactly as before.
+    power->statusbar_hide_battery = settings->statusbar_hide_battery;
     free(settings);
+    view_port_enabled_set(power->battery_view_port, !power->statusbar_hide_battery);
     view_port_update(power->battery_view_port);
 }
 
@@ -670,6 +674,7 @@ static Power* power_alloc(void) {
     DesktopSettings* settings = malloc(sizeof(DesktopSettings));
     desktop_settings_load(settings);
     power->displayBatteryPercentage = settings->displayBatteryPercentage;
+    power->statusbar_hide_battery = settings->statusbar_hide_battery;
     free(settings);
 
     // auto_poweroff
@@ -692,6 +697,10 @@ static Power* power_alloc(void) {
     // Battery view port
     power->battery_view_port = power_battery_view_port_alloc(power);
     gui_add_view_port(gui, power->battery_view_port, GuiLayerStatusBarRight);
+    // NOX: applied after the view port exists; settings are read further up, before it is alloc'd.
+    if(power->statusbar_hide_battery) {
+        view_port_enabled_set(power->battery_view_port, false);
+    }
     // Event loop
     power->event_loop = furi_event_loop_alloc();
     power->message_queue = furi_message_queue_alloc(4, sizeof(PowerMessage));
