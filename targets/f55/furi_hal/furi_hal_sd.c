@@ -892,8 +892,9 @@ static FuriStatus sd_device_write(const uint32_t* buff, uint32_t sector, uint32_
 }
 
 void furi_hal_sd_presence_init(void) {
-    // NOX: Adafruit 4682 DET -> PA9. Active HIGH (module grounds it when empty, pulls it
-    // to 3V via 4.7k when a card is inserted). Pull-down so an unwired line = "no card".
+    // NOX: Adafruit 4682 DET -> PA3 (SD_CD_Pin). Active HIGH: the module grounds it when empty
+    // and pulls it to 3V3 via 4.7k when a card is inserted. Pull-down so an unwired line reads
+    // as "no card". (PA9 is the nRF24 chip-select, not this.)
     furi_hal_gpio_init(&gpio_sdcard_cd, GpioModeInput, GpioPullDown, GpioSpeedLow);
 }
 
@@ -903,10 +904,49 @@ static void furi_hal_sd_present_pin_set_low(void) {
     // module's pull-up AND leave the pin configured as an output, breaking detection.
 }
 
+/* NOX: state for the DET-less fallback in furi_hal_sd_is_present().
+ *
+ * det_ever_high is the important one. It records that PA3 has been observed HIGH at least once,
+ * which proves the line is wired and working - and from then on DET is the only thing consulted,
+ * so hotplug behaves exactly as stock. The fallback below is only ever active on a board where
+ * DET has never once read high, i.e. where it is plausibly not connected at all.
+ *
+ * probe_attempted / probe_found are written by furi_hal_sd_init(), the only place that learns
+ * whether a card actually answers. */
+static bool furi_hal_sd_det_ever_high = false;
+static bool furi_hal_sd_probe_attempted = false;
+static bool furi_hal_sd_probe_found = false;
+
 bool furi_hal_sd_is_present(void) {
-    // NOX: real card detect via Adafruit 4682 DET on PA3 - HIGH = card inserted.
-    // (Opposite polarity to stock Flipper, whose CD is active-low.)
-    return furi_hal_gpio_read(&gpio_sdcard_cd);
+    // Real card detect via Adafruit 4682 DET on PA3 - HIGH = card inserted. Opposite polarity
+    // to stock Flipper, whose CD is active-low.
+    if(furi_hal_gpio_read(&gpio_sdcard_cd)) {
+        furi_hal_sd_det_ever_high = true;
+        return true;
+    }
+
+    /* DET reads low, and it has read high before, so the line demonstrably works: the card is
+     * genuinely out. Report that. This is the path that keeps removal detection, the unmount in
+     * storage_ext_tick_internal(), and the early-exit guard on the retry ladders in this file
+     * all behaving exactly as they did before the fallback existed. */
+    if(furi_hal_sd_det_ever_high) return false;
+
+    /* DET has never read high. Either the slot has been empty the whole time, or DET was never
+     * wired - plenty of cheap SD breakouts do not break the pin out at all. Trusting DET alone
+     * in the second case means a card sitting in the slot can never mount, which also takes
+     * down /int, since storage_process_alias() redirects it to /ext/.int.
+     *
+     * So claim "present" until one real init attempt has produced an answer, then report that
+     * answer. Latching on the init rather than on this call matters: an early caller (status
+     * bar, notifications) would otherwise burn the single attempt before the mount path ran.
+     *
+     * An empty slot costs one failed init at boot instead of zero and then reports absent, so
+     * the retry ladders still bail on their first condition check and the multi-second stalls
+     * that made detection gate mounting cannot come back. A card inserted after boot still
+     * needs a wired DET to be noticed. */
+    if(!furi_hal_sd_probe_attempted) return true;
+
+    return furi_hal_sd_probe_found;
 }
 
 uint8_t furi_hal_sd_max_mount_retry_count(void) {
@@ -958,6 +998,12 @@ FuriStatus furi_hal_sd_init(bool power_reset) {
 
     // Init sector cache
     sector_cache_init();
+
+    /* NOX: this is the only place that finds out whether a card is really there, so it owns the
+     * answer for the DET-less fallback in furi_hal_sd_is_present(). Assigned, not just set, so a
+     * later failure takes the fallback back to "absent" instead of latching present forever. */
+    furi_hal_sd_probe_attempted = true;
+    furi_hal_sd_probe_found = (status == FuriStatusOk);
 
     return status;
 }

@@ -45,6 +45,43 @@ pins, so some things are mutually exclusive:
 
 There are **no more bonded GPIOs** to expose — 14 header pins is the physical maximum.
 
+## No SD card means no settings
+
+There is no internal filesystem on this board. Only the external storage backend is compiled in,
+and `storage_process_alias()` redirects every `/int/...` path to `/ext/.int/...` on the SD card.
+
+Every settings file uses `INT_PATH(...)`: desktop, notification, power, input, expansion, BT keys
+and dolphin state. So **all of them live on the SD card**, and with no card inserted none of them
+survive a reboot: `..._settings_load()` fails on each boot and the struct is zeroed to defaults.
+
+Within a single session the behaviour splits, depending on who applies the setting:
+
+- **Applied from the desktop's in-RAM copy, so they hold until reboot.** On exit the settings app
+  calls `desktop_api_set_settings()`, which stores the struct in the desktop service and applies
+  it from there; the failed disk write only costs you persistence across a reboot. This covers
+  Show Clock, the Lock Screen Clock options, dummy mode and auto-lock.
+- **Re-read from storage, so they revert the moment you leave the settings screen.** The scene's
+  exit handler calls `power_trigger_ui_update()`, which does its own `desktop_settings_load()`,
+  fails, and gets defaults back. This covers Battery View and Hide Battery Icon.
+
+(`DesktopGlobalReloadSettings`, which does re-read from disk, is only sent when an SD card
+mounts, so it does not clobber the RAM copy on its own.)
+
+Porting a real internal filesystem is not available as a fix: it would need flash pages, and only
+about 15 KB is free below the BLE radio stack.
+
+Card-detect is on PA3, active HIGH. `furi_hal_sd_is_present()` mostly just reads it, with one
+exception for boards where the line was never wired:
+
+1. DET high: card present. This also records that the line works.
+2. DET low, having read high at some point: card absent. Identical to stock, so removal
+   detection, unmounting and the early exit on the retry ladders all behave normally.
+3. DET low, never having read high: the line may not be connected, so claim present until one
+   real init attempt answers, then report that answer.
+
+Only case 3 is new, and it can only happen on a board where DET has never once worked. An empty
+slot there costs one failed init at boot and is quiet afterwards.
+
 ## Flash ceiling
 
 The BLE radio stack sits near the top of the 1 MB flash and the linker does **not** reserve it.

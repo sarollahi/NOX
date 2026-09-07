@@ -206,17 +206,35 @@ or bricks (see §7).
 ## 5. Known bench-tuning knobs / gaps
 
 - **SD card-detect is a real line on PA3** (Adafruit 4682 DET, **HIGH = card inserted** — the
-  opposite polarity to a stock Flipper). `furi_hal_sd_is_present()` reads it directly, so
-  detection gates mounting and the retry count is down to 3. If a card never mounts, check DET
-  polarity first. (PA15 is the '165 Q7 — it is **not** a card-detect pin.)
+  opposite polarity to a stock Flipper). Detection gates mounting and the retry count is down to
+  3. (PA15 is the '165 Q7 — it is **not** a card-detect pin, and neither is PA9, which is the
+  nRF24 chip-select.)
+
+  `furi_hal_sd_is_present()` mostly just reads DET, with one exception for boards where the line
+  was never wired at all — plenty of cheap breakouts do not break the pin out:
+
+  1. **DET high** — present, and the line is recorded as working.
+  2. **DET low, having read high before** — absent. Byte-for-byte stock behaviour, so removal
+     detection, the unmount in `storage_ext_tick_internal()` and the early exit on the retry
+     ladders in `furi_hal_sd.c` all keep working.
+  3. **DET low, never having read high** — the line may be unconnected, so claim present until
+     one real `furi_hal_sd_init()` answers, then report that answer.
+
+  Only case 3 is new, and only reachable where DET has never once worked. An empty slot there
+  costs one failed init at boot and is quiet after. A card inserted *after* boot still needs a
+  wired DET to be noticed.
 - **LCD contrast/bias**: cheap ST756x panels vary. If the image is blank/ghosted, adjust the
   u8g2 contrast/bias in the display init (shared `lib/`), not this target.
 - **Single-bus SPI is serialized** by one mutex (required — a second enable of SPI1 hard-crashes
   via `furi_check`). Heavy concurrent NFC + display + SD activity will be slower than a stock
   Flipper's two-bus design. This is inherent to the wiring, not a bug.
-- **`gpio_pins[]` external-header table** is inherited from f7 and still lists pins now used by
-  modules (PA4/PA6/PA7/PB2/PB3). The GPIO app could drive them into conflict; trim the table if
-  you expose a user GPIO header.
+- **`gpio_pins[]` is already trimmed for this board.** This target overrides
+  `furi_hal_resources.c`, and its table exposes only the four debug pins (PA13/PA14 SWD, PB6/PB7
+  USART1) with `debug = true` so they are not driven to analog at boot. The f7 table that listed
+  PA4/PA6/PA7/PB2/PB3 does not apply here, and PC0/PC1/PC3 are deliberately omitted because they
+  are not bonded on UFQFPN48. Consequence worth knowing: the GPIO app cannot reach the expansion
+  header pins, and the `gpio` CLI cannot read PA3, so SD card-detect cannot be probed from the
+  command line.
 - **`cc1101_ext` is deliberately not built for f55 — leave it that way.**
   `applications/drivers/subghz/application.fam` declares `targets=["f7"]`, so the external-CC1101
   plugin never compiles here. That is load-bearing: its pins are hardcoded for a real Flipper's
@@ -244,6 +262,26 @@ or bricks (see §7).
   control line for a switch this board does not have, and non-bonded is the correct place for
   it. Combination support (SubGHz + NFC, SubGHz + nRF24, ESP32 + NFC, ...) is listed in
   `docs/hardware/plug-in-headers.md`.
+- **There is no internal filesystem, and `/int` is redirected onto the SD card.** Only
+  `storage_ext.c` exists; `storage.c` initialises `ST_EXT` alone and `storage_processing.c`
+  treats only `ST_EXT` as a valid type. `storage_process_alias()` rewrites any `/int/...` path to
+  `/ext/.int/...` and creates that directory on demand.
+
+  This is the most surprising consequence on this board: **with no SD card, no settings survive a
+  reboot.** Every settings file uses `INT_PATH(...)` — desktop, notification, power, input,
+  expansion, BT keys, dolphin state — so all of them resolve onto the card, and
+  `..._settings_load()` fails on every boot and zeroes the struct to defaults.
+
+  Within one session it depends on who applies the setting. The settings app calls
+  `desktop_api_set_settings()` on exit, which hands the struct to the desktop service and applies
+  it from RAM, so Show Clock, the Lock Screen Clock options, dummy mode and auto-lock all take
+  effect and hold until reboot. Battery View and Hide Battery Icon do not: the scene's exit
+  handler calls `power_trigger_ui_update()`, which re-reads from storage, fails, and reverts them
+  on the spot.
+
+  Porting a real internal filesystem is not an option here: it would need flash pages, and only
+  about 15 KB is free below the BLE stack.
+
 - **`furi_hal_power_{enable,disable}_external_3_3v()` are no-ops on this target.** There is no
   switchable 3V3 rail (the ME6231 LDO is always on) and the pin those functions drive,
   `gpio_periph_power`, is **PE4** here — blue LED, park pin, and the **nRF24 CE**. Left active
