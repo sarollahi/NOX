@@ -298,15 +298,13 @@ void desktop_view_locked_set_clock(
     const bool show_clock = settings->lock_show_clock;
     const bool visible = show_clock && model->view_state == DesktopViewLockedStateLocked;
     // Only ask for a redraw when the clock is actually on screen and the text would change.
-    const bool changed = visible &&
-                         (model->datetime.minute != datetime->minute ||
-                          model->datetime.hour != datetime->hour ||
-                          (settings->lock_show_seconds &&
-                           model->datetime.second != datetime->second) ||
-                          model->show_clock != show_clock ||
-                          model->show_seconds != (bool)settings->lock_show_seconds ||
-                          model->show_date != (bool)settings->lock_show_date ||
-                          model->format_12 != format_12);
+    const bool changed =
+        visible &&
+        (model->datetime.minute != datetime->minute || model->datetime.hour != datetime->hour ||
+         (settings->lock_show_seconds && model->datetime.second != datetime->second) ||
+         model->show_clock != show_clock ||
+         model->show_seconds != (bool)settings->lock_show_seconds ||
+         model->show_date != (bool)settings->lock_show_date || model->format_12 != format_12);
 
     model->show_clock = show_clock;
     model->show_seconds = settings->lock_show_seconds;

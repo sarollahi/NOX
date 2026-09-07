@@ -254,8 +254,8 @@ void desktop_settings_scene_start_on_enter(void* context) {
         CLOCK_ENABLE_COUNT,
         desktop_settings_scene_start_lock_seconds_changed,
         app);
-    value_index =
-        value_index_uint32(app->settings.lock_show_seconds, clock_enable_value, CLOCK_ENABLE_COUNT);
+    value_index = value_index_uint32(
+        app->settings.lock_show_seconds, clock_enable_value, CLOCK_ENABLE_COUNT);
     variable_item_set_current_value_index(item, value_index);
     variable_item_set_current_value_text(item, clock_enable_text[value_index]);
 
