@@ -125,11 +125,26 @@ cd "$CLONE"
 # Accept SDK API pending marks (?/v -> +) if a build stops on API finalization.
 # Adding a target with its own headers shifts the tracked SDK API once; this is the
 # documented Flipper firmware-dev step, not a code error.
+sedi() { sed -i '' -E "$1" "$2" 2>/dev/null || sed -i -E "$1" "$2"; }
+
 finalize_api() {
   for csv in targets/f55/api_symbols.csv targets/f7/api_symbols.csv; do
-    [ -f "$csv" ] && sed -i '' -E 's/^([A-Za-z]+),\?,/\1,+,/; s/^Version,v,/Version,+,/' "$csv" 2>/dev/null \
-      || { [ -f "$csv" ] && sed -i -E 's/^([A-Za-z]+),\?,/\1,+,/; s/^Version,v,/Version,+,/' "$csv"; }
+    if [ -f "$csv" ]; then
+      sedi 's/^([A-Za-z]+),\?,/\1,+,/; s/^Version,v,/Version,+,/' "$csv"
+    fi
   done
+
+  # f55's API is a strict superset of f7's (symbols added, none removed), so a MAJOR
+  # bump is never warranted here. fbt proposes one anyway because the tracked set
+  # shrinks mid-retarget, and accepting it makes the firmware export API 89 while
+  # every published .fap is API 88 -- the loader then shows "App Too Old" on every
+  # external app. Pin f55's major to f7's; the minor is free to move.
+  if [ -f targets/f55/api_symbols.csv ] && [ -f targets/f7/api_symbols.csv ]; then
+    f7major="$(awk -F, '$1=="Version"{split($3,v,"."); print v[1]; exit}' targets/f7/api_symbols.csv)"
+    if [ -n "$f7major" ]; then
+      sedi "s/^Version,([+v?]),[0-9]+\\./Version,\\1,${f7major}./" targets/f55/api_symbols.csv
+    fi
+  fi
 }
 
 if ! ./fbt TARGET_HW=55 COMPACT=1 DEBUG=0 updater_package; then
