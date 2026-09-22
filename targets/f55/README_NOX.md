@@ -151,10 +151,22 @@ API version is still WIP"*. This is **not** a code error (the firmware compiled)
 auto-generated marks and re-run:
 ```bash
 sed -i '' -E 's/^([A-Za-z]+),\?,/\1,+,/; s/^Version,v,/Version,+,/' targets/f55/api_symbols.csv
+# keep the API MAJOR equal to f7's -- see below
+sed -i '' -E "s/^Version,([+v?]),[0-9]+\./Version,\1,$(awk -F, '$1=="Version"{split($3,v,"."); print v[1]; exit}' targets/f7/api_symbols.csv)./" targets/f55/api_symbols.csv
 ./fbt TARGET_HW=55 COMPACT=1 DEBUG=0 updater_package
 ```
 (On an older checkout without `targets/f55/api_symbols.csv`, run the same `sed` on
 `targets/f7/api_symbols.csv`.) `bootstrap_nox.sh` does this automatically.
+
+**Never accept the MAJOR bump.** fbt proposes one (`VersionBump.MAJOR`,
+`scripts/fbt/sdk/cache.py`) whenever the tracked symbol set shrinks, which it does
+transiently while a new target is being wired up. But f55's API is a strict superset of
+f7's -- symbols added, none removed or deprecated -- so only the minor should move.
+Shipping a major bump makes the firmware export API 89 while every published `.fap`
+(app catalog, Unleashed app pack, anything built with ufbt) is API 88; the loader
+compares majors only and greets every external app with
+*"App Too Old -- APP:88 < FW:89"*. Keep `targets/f55/api_symbols.csv` on the same major
+as `targets/f7/api_symbols.csv`.
 
 ---
 
