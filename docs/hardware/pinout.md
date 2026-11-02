@@ -1,7 +1,8 @@
 # Pinout — WeAct STM32WB55CGU6 (UFQFPN48)
 
 Every bonded GPIO is assigned. `SPI1` (PB3/PB4/PB5) is a **single shared bus** for CC1101, the
-LCD, the SD card, and the plug-in NFC/nRF24 modules.
+LCD, the SD card, the NFC and the nRF24. Every pad and wire of the reference build:
+**[NOX Wiring Map](NOX%20Wiring%20Map.md)**.
 
 ## Always-on core
 
@@ -12,16 +13,16 @@ LCD, the SD card, and the plug-in NFC/nRF24 modules.
 | CC1101 SubGHz | CS PA7 · GDO0 PA1 | EXTI1 |
 | microSD | CS PA4 · DET PA3 | DET HIGH = inserted |
 | Buttons (SN74HC165) | PL PB8 · CP PA5 · Q7 PA15 | 6 buttons on D0–D5, 10 ms poll |
-| IR transmit | PB9 | TIM1_CH3N — plug-in IR LED module (e.g. KY-005) |
-| IR receive | PA0 | TIM2_CH1 — plug-in 38 kHz demodulator (TSOP38238 / KY-022) |
-| Speaker (buzzer) | PA6 | TIM16_CH1 / AF14 |
+| IR transmit | PB9 | TIM1_CH3N — IR LED module (e.g. KY-005) |
+| IR receive | PA0 | TIM2_CH1 — 38 kHz demodulator (TSOP38238 / KY-022) |
+| Speaker (buzzer) | PA6 | TIM16_CH1 / AF14 — passive buzzer through an NPN driver |
 | iButton (1-Wire) | PA10 | + 1 kΩ pull-up |
 | USB | PA11 / PA12 | |
 | SWD | PA13 / PA14 | debug header |
-| LED (WeAct blue) | PE4 | shared — see bays |
+| LED (WeAct blue) | PE4 | shared with nRF24 CE — flickers while the nRF24 is active |
 
 IR TX (PB9) and IR RX (PA0) are the **same pins/timers the real Flipper uses**, so the stock IR
-HAL runs unmodified. Both are plug-in — nothing there when no IR module is attached, harmless.
+HAL runs unmodified. With no IR module attached, nothing is there — harmless.
 
 > **Dropped vs the earlier layout:** vibro (was PA5, now the '165 CLK) and the battery-% ADC (was
 > PA2, now the NFC IRQ) were removed to free the two pins IR needs. Buzzer stays on PA6.
@@ -43,7 +44,7 @@ Each button: input → button → GND, with a 10 kΩ pull-up to 3V3. Tie D6/D7 �
 pull-up so a **missing '165 reads all-released** (no phantom keys). The '165 is bit-banged (not on
 the SPI bus), so it never contends with CC1101/NFC/SD.
 
-## Infrared (plug-in)
+## Infrared
 
 Two-wire signal + power. Uses the stock-Flipper IR pins, so no firmware retarget.
 
@@ -52,13 +53,14 @@ Two-wire signal + power. Uses the stock-Flipper IR pins, so no firmware retarget
 | Transmitter DAT (KY-005) | PB9 | drive an IR LED via its NPN; VCC 3V3 (or 5V for range), GND |
 | Receiver DAT (TSOP38238 / KY-022) | PA0 | demodulated 38 kHz output; **VCC = 3V3 only** (5V output would over-volt PA0) |
 
-## Plug-in add-on bays
+## ESP32, NFC and nRF24
 
-The swappable modules (ESP32 / UHF-RFID / Wiegand / NFC / nRF24) live on two headers — full wiring
-per module in **[plug-in-headers.md](plug-in-headers.md)**. Summary:
+The reference build hard-wires these like everything else — every pad and wire is in the
+**[NOX Wiring Map](NOX%20Wiring%20Map.md)**. The pins are the same as the plug-in bays in
+**[plug-in-headers.md](plug-in-headers.md)**, so either build runs the same firmware:
 
-- **Bay 1 — Serial (5-pin):** PB6, PB7, 5V, 3V3, GND. ESP32 **or** UHF **or** Wiegand.
-- **Bay 2 — SPI (9-pin):** PB3, PB5, PB4, PA8 (NFC CS), PA2 (NFC IRQ), PA9 (nRF24 CSN), PE4 (nRF24 CE), 3V3, GND.
+- **Serial:** PB6 → ESP32 RX, PB7 ← ESP32 TX; the ESP32 takes 5 V from the charger. UHF-RFID or Wiegand would need these pins instead.
+- **SPI:** PB3, PB5, PB4 shared; NFC CS PA8 · IRQ PA2; nRF24 CSN PA9 · CE PE4. The Elechouse ST25R3916B NFC board takes 5 V; the nRF24 adapter takes 3V3.
 
 ## Do not use
 

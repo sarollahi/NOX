@@ -116,7 +116,7 @@ const GpioPin gpio_usart_rx = {.port = USART1_RX_Port, .pin = USART1_RX_Pin};
 const GpioPin gpio_i2c_power_sda = {.port = GPIOA, .pin = LL_GPIO_PIN_10};
 const GpioPin gpio_i2c_power_scl = {.port = GPIOA, .pin = LL_GPIO_PIN_9};
 
-// No speaker on NOX board; PB8 is the UP button. Park on spare NC pin PE4.
+// NOX: passive buzzer on PA6 (TIM16_CH1 / AF14), switched by an NPN.
 const GpioPin gpio_speaker = {.port = SPEAKER_GPIO_Port, .pin = SPEAKER_Pin};
 
 // NOX: no SD power-switch on this board (SD is fed straight from 3V3), so this stock

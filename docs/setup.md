@@ -86,8 +86,10 @@ hand-trimmed card, not a build option.
 
 ## 5. Wire the modules
 
-Core wiring: [hardware/pinout.md](hardware/pinout.md). Swappable modules
-(ESP32 / UHF / Wiegand / NFC / nRF24): [hardware/plug-in-headers.md](hardware/plug-in-headers.md).
+Every pad and wire of the reference build (all modules hard-wired):
+[hardware/NOX Wiring Map.md](hardware/NOX%20Wiring%20Map.md). Pin summary: [hardware/pinout.md](hardware/pinout.md).
+Swappable headers instead (ESP32 / UHF / Wiegand / NFC / nRF24):
+[hardware/plug-in-headers.md](hardware/plug-in-headers.md).
 
 ## 6. ESP32 companion firmware
 
@@ -98,4 +100,5 @@ WiFi apps (Marauder, Ghost ESP, the FlipperHTTP suite) need firmware on the ESP3
 - Ghost ESP — <https://github.com/jaylikesbunda/Ghost_ESP>
 - FlipperHTTP (FlipWiFi/Weather/etc.) — <https://github.com/jblanked/FlipperHTTP>
 
-Wire: ESP32 TX→PB7, RX←PB6, GND common, ESP32 on 5V (Serial bay).
+Wire: ESP32 TX→PB7, RX←PB6, GND common, ESP32 on 5V. With only RX/TX wired, put the ESP32 into
+download mode yourself (hold its BOOT button while you reset it) before flashing from the Flipper.

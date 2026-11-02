@@ -1,8 +1,8 @@
 # Features
 
 Every app below is installed on the SD build. Browse the full catalogue with
-hardware notes in [app-catalog.md](app-catalog.md); wire swappable modules per
-[hardware/plug-in-headers.md](hardware/plug-in-headers.md).
+hardware notes in [app-catalog.md](app-catalog.md); wire the modules per
+[hardware/NOX Wiring Map.md](hardware/NOX%20Wiring%20Map.md) (or [plug-in headers](hardware/plug-in-headers.md)).
 
 
 ## Sub-GHz
@@ -40,7 +40,7 @@ hardware notes in [app-catalog.md](app-catalog.md); wire swappable modules per
 
 ## Infrared
 
-38 kHz IR via a plug-in module (IR LED + NPN on PB9 for TX, TSOP38238/KY-022 demodulator on PA0
+38 kHz IR via an IR module (IR LED + NPN on PB9 for TX, TSOP38238/KY-022 demodulator on PA0
 for RX). These are the stock-Flipper IR pins (TIM1/TIM2), so the full IR app runs unmodified:
 
 - **Infrared** (`infrared`) — learn, save, and replay remotes; universal remote database (TV / AC /
@@ -53,7 +53,7 @@ LED for more).
 
 ## NFC
 
-13.56 MHz via the ST25R3916 (plug-in). Core read/emulate plus:
+13.56 MHz via the ST25R3916B (Elechouse board). Core read/emulate plus:
 
 - **AmiTool** (`ami_tool`) — An NTAG215 toolkit for Flipper Zero to work with tags used with gaming consoles
 - **ChaosID** (`chaos_id`) — Card forensics + risk classification + MIFARE Classic dictionary attack
@@ -92,7 +92,7 @@ LED for more).
 
 ## Wireless — WiFi / BLE
 
-On-board BLE (light stack) + ESP32 over the Serial bay (flash the ESP with **ESP Flasher**):
+On-board BLE (light stack) + ESP32 on USART1, PB6/PB7 (flash the ESP with **ESP Flasher**):
 
 - **BLE Spam** (`ble_spam`) — Flood BLE advertisements to cause spammy and annoying popups/notifications
 - **BT Trigger** (`bt_trigger`) — Control your smartphone camera via your Flipper Zero
@@ -122,7 +122,7 @@ On-board BLE (light stack) + ESP32 over the Serial bay (flash the ESP with **ESP
 
 ## nRF24 & UHF-RFID
 
-2.4 GHz nRF24L01+ (SPI bay) and UHF-RFID YRM100 (Serial bay):
+2.4 GHz nRF24L01+ (SPI) and UHF-RFID YRM100 (USART1, in place of the ESP32):
 
 - **NRF24 Batch** (`nrf24_batch`) — NRF24 Batch
 - **[NRF24] Mouse Jacker** (`nrf24_mouse_jacker`) — App works with NRF24 Sniffer app to perform mousejack attacks

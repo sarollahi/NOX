@@ -19,7 +19,7 @@ cheap radio, RFID, display and input modules. No custom PCB, no $170 device. The
 tree lives in this repo** and builds with a single command.
 
 - **Whole codebase, in-repo.** Clone and run `./fbt` — no external checkout, no submodule dance. What you see is what ships.
-- **Only the parts you want.** Peripherals hang off two **plug-in add-on bays** — swap ESP32 / UHF-RFID / NFC / nRF24 in and out; nothing is soldered permanently.
+- **Hard-wired or plug-in.** The reference build solders every module inside its case — every pad and wire is in the **[NOX Wiring Map](docs/hardware/NOX%20Wiring%20Map.md)**. The same pins also work on [plug-in headers](docs/hardware/plug-in-headers.md) if you'd rather swap modules on a bench build.
 - **Missing hardware never breaks it.** A shared-SPI self-heal plus missing-hardware guards keep the UI alive when a module isn't plugged in.
 
 > ⚠️ **Offensive-security tooling.** NOX ships WiFi/BLE/SubGHz/NFC/RFID attack apps. Use them only
@@ -35,13 +35,15 @@ tree lives in this repo** and builds with a single command.
 | SubGHz | **CC1101** | shared SPI1, CS PA7, GDO0 PA1 |
 | Display | **ST7565 128×64** | shared SPI1, CS PB2 / RST PB0 / DC PB1 |
 | microSD | SPI SD module | shared SPI1, CS PA4, DET PA3 |
-| NFC | **ST25R3916** *(plug-in)* | shared SPI1, CS PA8, IRQ PA2 |
+| NFC | **ST25R3916B** (Elechouse board, 5 V in) | shared SPI1, CS PA8, IRQ PA2 |
+| 2.4 GHz | **nRF24L01+PA+LNA** | shared SPI1, CSN PA9, CE PE4 |
 | Buttons | **SN74HC165** shift register | PL PB8 / CP PA5 / Q7 PA15 |
-| Infrared *(plug-in)* | IR LED + 38 kHz receiver | TX PB9 · RX PA0 (stock-Flipper IR pins) |
+| Infrared | IR LED + 38 kHz receiver | TX PB9 · RX PA0 (stock-Flipper IR pins) |
 | Speaker (buzzer) · iButton | passive + NPN | PA6 (TIM16) · PA10 |
-| Add-on bays | 5-pin serial + 9-pin SPI + IR | [plug-in headers](docs/hardware/plug-in-headers.md) |
+| WiFi / BLE | **ESP32-C5 Mini** | USART1: PB6 → ESP RX · PB7 ← ESP TX |
+| Wiring | every pad, every wire | [NOX Wiring Map](docs/hardware/NOX%20Wiring%20Map.md) |
 
-Full pin map: **[docs/hardware/pinout.md](docs/hardware/pinout.md)**.
+Pin summary: **[docs/hardware/pinout.md](docs/hardware/pinout.md)** · full wiring, pad by pad: **[NOX Wiring Map](docs/hardware/NOX%20Wiring%20Map.md)**.
 
 ## Build & flash
 
@@ -70,26 +72,27 @@ First-board bring-up (radio stack, OTP, the reliable `reboot2dfu` flashing metho
 | NFC 13.56 MHz | read/emulate, mfkey, Magic, PicoPass, Seader, Metroflip, ChaosID | [features.md](docs/features.md) |
 | WiFi / BLE | Marauder, Ghost ESP, Evil Portal, BLE Spam, deauth, FlipperHTTP suite | [features.md](docs/features.md) |
 | 2.4 GHz / UHF | nRF24 Mousejack/sniff, UHF-RFID (YRM100), Wiegand | [features.md](docs/features.md) |
-| Infrared | learn/replay remotes, universal TV/AC database (plug-in IR module) | [features.md](docs/features.md) |
+| Infrared | learn/replay remotes, universal TV/AC database (IR module) | [features.md](docs/features.md) |
 | USB / iButton | BadUSB, HID, U2F, iButton read/emulate/fuzz | [features.md](docs/features.md) |
 
 A default `f55` build deploys **255 apps + 130 plugins** to the SD card. Descriptions:
 **[docs/app-catalog.md](docs/app-catalog.md)**.
 
-## Plug-in add-on bays
+## Shared pins
 
-- **Bay 1 — Serial (5-pin):** ESP32 **or** UHF-RFID **or** Wiegand (all share the UART).
-- **Bay 2 — SPI (9-pin):** NFC **and/or** nRF24 — both coexist with SubGHz (shared SPI is time-sliced; RF-switch GPIO parked off PE4).
-- **Bay 3 — IR (2-wire):** IR LED (PB9) + 38 kHz receiver (PA0), always available.
+- **Serial (PB6/PB7):** one device — the reference build wires the ESP32 here; UHF-RFID or Wiegand would need the same pins.
+- **SPI:** NFC **and** nRF24 — both coexist with SubGHz (shared SPI is time-sliced; RF-switch GPIO parked off PE4).
+- **IR:** IR LED (PB9) + 38 kHz receiver (PA0), always available.
 
-Wiring per module: **[docs/hardware/plug-in-headers.md](docs/hardware/plug-in-headers.md)**.
+Wiring per module: **[NOX Wiring Map](docs/hardware/NOX%20Wiring%20Map.md)** (hard-wired) ·
+**[plug-in-headers.md](docs/hardware/plug-in-headers.md)** (swappable headers).
 
 ## Limitations
 
 - **No 125/134 kHz LF-RFID** — no analog LF front-end, and those pins aren't bonded on the package. Excluded, not broken. (Infrared *is* supported — plug-in IR module on the stock-Flipper IR pins.)
 - **No vibro / battery-% ADC** — those two pins were reassigned to free IR (buzzer stays).
 - **One shared SPI bus** — some peripheral combinations are mutually exclusive.
-- **Pin-starved** — the add-on bays reuse pins; run one serial device at a time.
+- **Pin-starved** — some modules share pins; only one serial device (ESP32, UHF or Wiegand) at a time.
 
 Full detail with the *why*: **[docs/limitations.md](docs/limitations.md)**.
 
@@ -97,7 +100,7 @@ Full detail with the *why*: **[docs/limitations.md](docs/limitations.md)**.
 
 | I want to… | Read |
 |---|---|
-| Wire the board & modules | [pinout.md](docs/hardware/pinout.md) · [plug-in-headers.md](docs/hardware/plug-in-headers.md) |
+| Wire the board & modules | [NOX Wiring Map](docs/hardware/NOX%20Wiring%20Map.md) · [pinout.md](docs/hardware/pinout.md) · [plug-in-headers.md](docs/hardware/plug-in-headers.md) |
 | Build & flash | [setup.md](docs/setup.md) |
 | See every feature | [features.md](docs/features.md) |
 | Browse all apps | [app-catalog.md](docs/app-catalog.md) |
