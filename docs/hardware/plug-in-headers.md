@@ -1,5 +1,9 @@
 # NOX plug-in add-on headers
 
+> **Reference build:** the case build hard-wires all of these instead — see the
+> **[NOX Wiring Map](NOX%20Wiring%20Map.md)**. The pins below are the same, so a header build runs the same
+> firmware. Use this page for a bench build where you swap modules.
+
 Goal: Wiegand / UHF-RFID / ESP32 / NFC / nRF24 are **not soldered on permanently** — you plug in
 the one you need. They share pins, so only the rules below matter (one-at-a-time where noted).
 No firmware change to swap: missing hardware never hangs (self-heal SPI + missing-hw guards).
@@ -34,7 +38,7 @@ Wire two female headers on the board and make matching module pigtails.
 | 5 | PA2 | NFC **IRQ** | — |
 | 6 | PA9 | — | **CSN** |
 | 7 | PE4 | — | **CE** |
-| 8 | 3V3 | VCC | VCC (use the 3V3 breakout adapter) |
+| 8 | 3V3 | VCC (3.3 V boards only — the Elechouse ST25R3916B takes **5V**) | VCC (use the 3V3 breakout adapter) |
 | 9 | GND | GND | GND |
 
 - NFC and nRF24 use **different CS pins**, so both can be plugged at once. **nRF24 CE = PE4** no

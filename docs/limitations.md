@@ -13,7 +13,7 @@ These are the honest trade-offs.
 LF-RFID is removed from the build. Don't buy hardware to "add" it — it won't integrate.
 
 **Infrared is supported** (it was previously excluded). IR TX (PB9) and IR RX (PA0) are the same
-pins/timers the real Flipper uses, so the stock IR HAL runs unmodified. It's a plug-in module (IR
+pins/timers the real Flipper uses, so the stock IR HAL runs unmodified. It uses an IR module (IR
 LED + 38 kHz demodulator — see [pinout.md](hardware/pinout.md)). Freeing those two pins cost the
 **vibro** motor (PA5 is now the '165 CLK) and the **battery-% ADC** (PA2 is now the NFC IRQ); the
 buzzer stays. Battery % currently reports full on USB regardless (ADC sense disabled).
@@ -27,23 +27,25 @@ Flipper uses two. Consequences:
   SPI1 alternate function on **every** activation so it self-heals (this was a real bring-up bug).
 - Any new SPI device you add must not assume pin state persists across a radio/NFC transaction.
 
-## Pin starvation & the add-on bays
+## Pin starvation & shared pins
 
-Every GPIO on the package is allocated. The two [plug-in bays](hardware/plug-in-headers.md) reuse
-pins, so some things are mutually exclusive:
+Every GPIO on the package is allocated. Some modules reuse pins, whether they are hard-wired (the
+reference build, [NOX Wiring Map](hardware/NOX%20Wiring%20Map.md)) or on [plug-in headers](hardware/plug-in-headers.md),
+so some things are mutually exclusive:
 
-- **Serial bay:** ESP32 **or** UHF-RFID **or** Wiegand — one at a time (all own USART1).
-- **SPI bay:** NFC and nRF24 coexist (different CS), and both now coexist with **SubGHz** too —
+- **Serial (PB6/PB7):** ESP32 **or** UHF-RFID **or** Wiegand — one at a time (all own USART1).
+  The reference build wires the ESP32.
+- **SPI:** NFC and nRF24 coexist (different CS), and both now coexist with **SubGHz** too —
   the RF-switch GPIO was parked on non-bonded PC3 (no switch chip exists on this board), so PE4 is
   the nRF24 CE alone. The one true limit is the shared SPI1 bus: it's **time-sliced**, so you
   interleave (poll CC1101, then nRF24) rather than clock both in the same instant. No simultaneous
   transmit on both radios at once.
-- **CAN (MCP2515) / W5500 Ethernet** add-ons fit the SPI bay but borrow its CS/INT lines, so they
+- **CAN (MCP2515) / W5500 Ethernet** add-ons fit on the SPI bus but borrow the NFC/nRF24 CS/INT lines, so they
   compete with NFC/nRF24 — plug one SPI add-on at a time.
-- **Wiegand emulate** (not just read) needs the drive pins PA9/PE4 from the SPI bay in addition to
-  D0/D1 on the serial bay.
+- **Wiegand emulate** (not just read) needs the drive pins PA9/PE4 (nRF24 CSN/CE) in addition to
+  D0/D1 on PB6/PB7.
 
-There are **no more bonded GPIOs** to expose — 14 header pins is the physical maximum.
+There are **no more bonded GPIOs** to expose.
 
 ## No SD card means no settings
 
